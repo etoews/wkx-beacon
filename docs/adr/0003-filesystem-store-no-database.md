@@ -1,0 +1,3 @@
+# Filesystem store, no database
+
+Run records and artefacts live on the filesystem (`{data_dir}/reports/<report-name>/runs/<run-id>/`), with `run.json` written last as the commit marker and an in-memory index built by scanning. We chose this over SQLite or a database because at one run per report per day the filesystem is trivially sufficient, artefacts are immutable files anyway, and zero schema or migration machinery keeps the container stateless apart from one mounted directory. Run identity is baked into URLs by this layout, so replacing the store later is a real migration; the store sits behind a small interface to keep that possible.

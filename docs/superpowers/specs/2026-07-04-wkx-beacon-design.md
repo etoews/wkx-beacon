@@ -152,12 +152,15 @@ catch_up = false                  # opt-in boot catch-up, default off
 [report.collector_config]         # validated by the aws-cost plugin's model
 budget = 50.0
 budget_currency = "NZD"
-display = "local-first"           # "usd" (default) or "local-first"
+display = "local-first"           # currency display: "usd" (default) or "local-first"
 fx_usd_to_local = 1.64            # static, shown in report fine print
+day_display = "local-first"       # date labels: "utc" (default) or "local-first"
 
 [report.notifier_config.email-ses]
 to = ["<recipient>"]
 ```
+
+Report names are unique slugs (lowercase letters, digits, hyphens), validated at boot; a duplicate name is a boot error. The name is the report's identity, URL segment, and store directory: renaming a report detaches its history (the old directory stays on disk; the viewer ignores store directories that match no configured report).
 
 Unknown plugin names, unknown config keys, and missing entry points are startup errors that list what was found versus what was expected. Beacon fails at boot, not at 07:00.
 
@@ -171,7 +174,9 @@ APScheduler inside the FastAPI process (started via lifespan). One timezone-awar
 
 Each run gets a run ID (UTC timestamp based). Stages run sequentially: collect, render, store, notify. Third-party exceptions are translated at the boundary into a `BeaconError` hierarchy (`CollectError`, `RenderError`, `NotifyError`). Within a run, boto3's standard retry mode absorbs transient blips; there is no pipeline-level retry queue (the next cron is tomorrow).
 
-**A failed run is still a run.** It is recorded in the store with status and error summary, it appears in the viewer, and notifiers deliver a failure notice naming the failed stage instead of a report summary. Breakage is announced the same way spend is. A notify failure is logged and recorded on the run.
+**A failed run is still a run.** It is recorded in the store with status and error summary, it appears in the viewer, and notifiers deliver a failure notice naming the failed stage instead of a report summary. Breakage is announced the same way spend is.
+
+**Published and run status.** A run is **published** once its artefacts are stored. Status is one of three: `ok` (every stage clean), `degraded` (published, but a renderer or notifier failed), `failed` (not published). With multiple renderers, artefacts from the renderers that succeeded are stored and the run is degraded. A notify failure degrades the run; it never unpublishes it.
 
 ### Store
 
@@ -201,7 +206,7 @@ Server-rendered Jinja2 with htmx for partial updates (history pagination, status
 |---|---|
 | `GET /` | Index: each report with latest run status and headline figures |
 | `GET /reports/{name}` | Run history; htmx lazy-loads older pages |
-| `GET /reports/{name}/latest` | Redirect to latest successful run; the stable link emails use |
+| `GET /reports/{name}/latest` | Redirect to the latest published run; the stable link emails use |
 | `GET /reports/{name}/runs/{run-id}` | Run permalink: metadata, stage outcomes, artefact |
 | `GET /reports/{name}/runs/{run-id}/artifacts/{file}` | The raw artefact, served as-is |
 | `GET /healthz` | Health check |
@@ -217,12 +222,14 @@ The visual design of the viewer and the cost report page was mocked during the d
 ### aws-cost collector (cost × aws)
 
 - One AWS Cost Explorer call per run: `GetCostAndUsage`, daily granularity, unblended cost, current month plus the previous 30 days, grouped by the `Service` and `Env` cost-allocation tags (Cost Explorer allows two group-bys per call; totals are derived by summing).
-- Computes: month-to-date, yesterday, per-tag breakdowns, untagged share, and projected month-end as a simple average of complete days extrapolated over the month. No forecast API; predictable and explainable.
+- Computes: month-to-date, latest complete billing day, per-tag breakdowns, untagged share, and projected month-end as a simple average of complete billing days extrapolated over the month. No forecast API; predictable and explainable.
 - Cost: USD 0.01 per Cost Explorer request, roughly USD 0.30/month at one call per day.
 - Returns `CostReportData`. Config: `budget`, `budget_currency`, `display`, `fx_usd_to_local`, and the group-by tag keys (defaulting to the platform's `Service` and `Env`).
 - Credentials via the default AWS SDK resolution chain. How permissions are provisioned on the host is a wkx-platform decision, out of beacon's scope; beacon documents what it needs (`ce:GetCostAndUsage`, `ses:SendEmail`).
 
 **Currency.** Cost Explorer only returns USD. Display is per-report config: `display = "usd"` (default) reports purely in USD; `display = "local-first"` shows local-currency figures first with USD alongside, converted at a configured static rate that appears in the report fine print. This deployment: NZD first at a configured rate (for example 1.64 NZD/USD), updated manually on occasion; drift of a few percent does not matter for a $50 budget signal.
+
+**Billing days.** The source of truth is fixed and the display is configurable, mirroring currency. Billing data is always UTC calendar days and UTC months, the frame of the AWS invoice and the budget; projections and budget maths use complete UTC billing days, and "yesterday" means the latest complete billing day. `day_display = "utc"` (default) labels dates as UTC; `day_display = "local-first"` labels each billing day with the local date (in the report's timezone) that covers most of it, carries both dates in tooltips and the table view, and states the mapping in the fine print. A run in the early local morning of the 1st still reports the previous billing month; that is the month wrap-up, by design. This deployment: local-first, Pacific/Auckland.
 
 ### html renderer
 
@@ -317,6 +324,6 @@ Deployment follows the platform contract: git push, GitHub Actions (OIDC), ECR, 
 
 - **Public cost data.** Spend patterns are visible to anyone with the URL until the platform authn decision lands. Mitigated by rendering no account identifiers; accepted for now.
 - **Plugin API stability.** Committing to a public API before a second platform exists risks churn. Mitigated by semver on `wkx_beacon.plugin` and the conformance test kit; accepted as the cost of the plugin-first choice.
-- **Cost Explorer latency.** Data lags up to about 24 hours; the daily report reflects that, and the projection maths uses complete days only.
+- **Cost Explorer latency.** Data lags up to about 24 hours; the daily report reflects that, and the projection maths uses complete UTC billing days only.
 - **Platform timing.** The WKX Platform is pre-M1; beacon cannot deploy to prod until platform milestones land. Local Docker Compose is the interim runtime.
 - **SES sandbox.** Fine for self-notification; leaving the sandbox is only needed if reports are ever emailed to arbitrary recipients.
