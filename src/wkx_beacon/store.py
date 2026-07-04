@@ -57,13 +57,17 @@ class Store:
         """Resolve the run directory for run_id, refusing traversal.
 
         Mirrors the resolve()/is_relative_to() guard already used by
-        artefact_path and write_artefacts. run_id is caller-supplied (it
-        arrives via the web layer's URL path), so it must not be able to
-        walk out of the report's runs directory. Returns None if it does.
+        artefact_path and write_artefacts. Both report_name and run_id are
+        caller-supplied (they arrive via the web layer's URL path), so neither
+        may walk out of the store: report_name is anchored under the reports
+        root and run_id under the report's runs directory. Returns None on any
+        escape, so the guard holds even for a caller that skips config
+        validation. Returns None if either escapes.
         """
+        reports_root = (self.data_dir / "reports").resolve()
         base = (self.data_dir / "reports" / report_name / "runs").resolve()
         candidate = (base / run_id).resolve()
-        if not candidate.is_relative_to(base):
+        if not base.is_relative_to(reports_root) or not candidate.is_relative_to(base):
             return None
         return candidate
 

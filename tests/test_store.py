@@ -165,3 +165,19 @@ def test_read_record_refuses_traversal_in_report_name_and_run_id(tmp_path: Path)
     store = Store(tmp_path)
 
     assert store.read_record("../../etc", "../../passwd") is None
+
+
+def test_read_record_refuses_report_name_escape_with_clean_run_id(tmp_path: Path) -> None:
+    """A report_name that escapes the reports root must be refused even when
+
+    run_id is clean, so the guard holds without relying on config-layer slug
+    validation. A run.json is planted where an unguarded base would land.
+    """
+    store = Store(tmp_path)
+    # report_name "../escaped" makes the unguarded base data_dir/escaped/runs;
+    # plant a real run.json there so only the reports-root anchor refuses it.
+    escaped = tmp_path / "escaped" / "runs" / "run"
+    escaped.mkdir(parents=True)
+    (escaped / "run.json").write_text(record("run").model_dump_json())
+
+    assert store.read_record("../escaped", "run") is None
