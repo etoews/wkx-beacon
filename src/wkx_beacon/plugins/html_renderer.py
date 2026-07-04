@@ -3,7 +3,7 @@
 import logging
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from pydantic import BaseModel
 
 from wkx_beacon.exceptions import RenderError
@@ -29,9 +29,7 @@ class HtmlRenderer:
                 f"no template pack for report type {data.report_type!r}; "
                 "the collector must provide template_dir()"
             )
-        env = Environment(
-            loader=FileSystemLoader(template_dir), autoescape=select_autoescape(["html"])
-        )
+        env = Environment(loader=FileSystemLoader(template_dir), autoescape=True)
         template_name = f"{data.report_type}.html.j2"
         try:
             html = env.get_template(template_name).render(data=data)

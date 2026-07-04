@@ -63,3 +63,18 @@ def test_missing_template_dir_is_a_render_error() -> None:
 
     with pytest.raises(RenderError, match="template"):
         renderer.render(fixture_data(), None)
+
+
+def test_escapes_untrusted_strings_in_tag_cost_keys() -> None:
+    renderer = HtmlRenderer(HtmlRendererConfig())
+    template_dir = AwsCostCollector(AwsCostConfig(budget=Decimal("30"))).template_dir()
+
+    data = fixture_data().model_copy(
+        update={"by_service": [TagCost(key="<script>alert(1)</script>", usd=Decimal("1.00"))]}
+    )
+
+    artefacts = renderer.render(data, template_dir)
+    html = artefacts[0].content.decode()
+
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;" in html
