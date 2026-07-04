@@ -10,7 +10,9 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from croniter import croniter
 from pydantic import BaseModel, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -55,6 +57,22 @@ class ReportConfig(BaseModel):
     def name_is_slug(cls, v: str) -> str:
         if not SLUG_RE.fullmatch(v):
             raise ValueError(f"report name {v!r} is not a slug (lowercase, digits, hyphens)")
+        return v
+
+    @field_validator("schedule")
+    @classmethod
+    def schedule_is_valid_cron(cls, v: str) -> str:
+        if not croniter.is_valid(v):
+            raise ValueError(f"{v!r} is not a valid cron expression")
+        return v
+
+    @field_validator("timezone")
+    @classmethod
+    def timezone_is_valid(cls, v: str) -> str:
+        try:
+            ZoneInfo(v)
+        except (ZoneInfoNotFoundError, ValueError, KeyError) as e:
+            raise ValueError(f"{v!r} is not a valid timezone") from e
         return v
 
 

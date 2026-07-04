@@ -87,7 +87,7 @@ def execute(
         status = "degraded"
     else:
         status = "ok"
-    if not headline:
+    if status == "failed":
         headline = f"failed at {failed_stage}" if failed_stage else "no output"
 
     published = status != "failed"

@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from wkx_beacon.config import ReportConfig
@@ -95,3 +96,33 @@ def test_healthz(tmp_path: Path) -> None:
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_corrupt_run_record_is_404_with_security_headers(tmp_path: Path) -> None:
+    client, run_id = seeded_client(tmp_path)
+    run_json = tmp_path / "reports" / "platform-cost" / "runs" / run_id / "run.json"
+    run_json.write_text("{not json")
+
+    response = client.get(f"/reports/platform-cost/runs/{run_id}")
+
+    assert response.status_code == 404
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_unhandled_exception_returns_500_with_security_headers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from wkx_beacon.store import Store
+
+    client, run_id = seeded_client(tmp_path)
+
+    def boom(self: Store, report_name: str, run_id: str) -> None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(Store, "read_record", boom)
+    raising_client = TestClient(client.app, raise_server_exceptions=False)
+
+    response = raising_client.get(f"/reports/platform-cost/runs/{run_id}")
+
+    assert response.status_code == 500
+    assert response.headers["x-content-type-options"] == "nosniff"

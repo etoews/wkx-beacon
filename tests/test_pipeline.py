@@ -88,6 +88,7 @@ def test_template_dir_failure_is_failed_but_still_a_run(tmp_path: Path) -> None:
     assert not record.published
     assert store.read_record("platform-cost", record.run_id) is not None
     assert notifier.received[0].failed_stage == "template-dir"
+    assert notifier.received[0].headline == "failed at template-dir"
 
 
 def test_all_renderers_failing_is_failed(tmp_path: Path) -> None:

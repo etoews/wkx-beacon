@@ -55,6 +55,16 @@ def test_report_name_must_be_a_slug(bad_name: str) -> None:
         ReportConfig.model_validate(report_dict(name=bad_name))
 
 
+def test_report_schedule_must_be_a_valid_cron_expression() -> None:
+    with pytest.raises(ValueError, match="cron expression"):
+        ReportConfig.model_validate(report_dict(schedule="99 99 * * *"))
+
+
+def test_report_timezone_must_be_a_valid_timezone() -> None:
+    with pytest.raises(ValueError, match="timezone"):
+        ReportConfig.model_validate(report_dict(timezone="Mars/Olympus"))
+
+
 def test_duplicate_report_names_are_a_boot_error() -> None:
     with pytest.raises(ValueError, match="duplicate"):
         BeaconConfig.model_validate({"reports": [report_dict(), report_dict()]})

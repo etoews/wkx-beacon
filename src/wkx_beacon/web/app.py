@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from wkx_beacon.config import ReportConfig
+from wkx_beacon.exceptions import StoreError
 from wkx_beacon.store import Store
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,11 @@ def create_app(
         response: Response = await call_next(request)
         response.headers.update(SECURITY_HEADERS)
         return response
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(request: Request, exc: Exception) -> Response:
+        logger.exception("unhandled exception while serving %s", request.url.path)
+        return PlainTextResponse("internal server error", status_code=500, headers=SECURITY_HEADERS)
 
     def _known(name: str) -> ReportConfig:
         if name not in configured:
@@ -105,7 +111,11 @@ def create_app(
     @app.get("/reports/{name}/runs/{run_id}")
     def run_detail(request: Request, name: str, run_id: str) -> Response:
         _known(name)
-        record = store.read_record(name, run_id)
+        try:
+            record = store.read_record(name, run_id)
+        except StoreError as e:
+            logger.warning("corrupt run record %s/%s: %s", name, run_id, e)
+            raise HTTPException(status_code=404) from e
         if record is None:
             raise HTTPException(status_code=404)
         return templates.TemplateResponse(request, "run.html.j2", {"record": record})

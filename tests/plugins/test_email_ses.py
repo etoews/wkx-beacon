@@ -33,7 +33,7 @@ def expected_params(subject: str) -> dict[str, Any]:
     return {
         "FromEmailAddress": "beacon@example.com",
         "Destination": {"ToAddresses": ["me@example.com"]},
-        "Content": {"Simple": {"Subject": {"Data": subject}, "Body": ANY}},
+        "Content": {"Simple": {"Subject": {"Data": subject, "Charset": "UTF-8"}, "Body": ANY}},
     }
 
 

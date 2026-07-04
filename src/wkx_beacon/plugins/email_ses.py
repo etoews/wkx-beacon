@@ -54,8 +54,8 @@ class EmailSesNotifier:
                 Destination={"ToAddresses": self.config.to},
                 Content={
                     "Simple": {
-                        "Subject": {"Data": self._subject(summary)},
-                        "Body": {"Text": {"Data": "\n".join(lines)}},
+                        "Subject": {"Data": self._subject(summary), "Charset": "UTF-8"},
+                        "Body": {"Text": {"Data": "\n".join(lines), "Charset": "UTF-8"}},
                     }
                 },
             )
