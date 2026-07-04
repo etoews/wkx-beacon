@@ -103,3 +103,5 @@ def test_ses_errors_become_notify_errors() -> None:
 
     with stubber, pytest.raises(NotifyError):
         n.notify(summary())
+
+    stubber.assert_no_pending_responses()
