@@ -45,7 +45,15 @@ def collector(config: AwsCostConfig) -> tuple[AwsCostCollector, Stubber]:
         aws_secret_access_key="x",
     )
     stubber = Stubber(client)
-    stubber.add_response("get_cost_and_usage", ce_response())
+    # NOW is 2026-07-04 UTC: month_start is 2026-07-01, today-30d is 2026-06-04,
+    # so Start is the earlier of the two and End is today (exclusive).
+    expected_params = {
+        "TimePeriod": {"Start": "2026-06-04", "End": "2026-07-04"},
+        "Granularity": "DAILY",
+        "Metrics": ["UnblendedCost"],
+        "GroupBy": [{"Type": "TAG", "Key": "Service"}, {"Type": "TAG", "Key": "Env"}],
+    }
+    stubber.add_response("get_cost_and_usage", ce_response(), expected_params)
     return AwsCostCollector(config, ce_client=client), stubber
 
 
@@ -85,6 +93,21 @@ def test_local_first_day_labels_shift_to_majority_date() -> None:
     assert data.daily[0].day == date(2026, 7, 1)
     assert data.daily[0].label == "2026-07-02"  # NZ majority date of UTC 1 July
     assert "NZD" in data.headline
+
+
+def test_usd_display_converts_non_usd_budget() -> None:
+    config = AwsCostConfig(
+        budget=Decimal("50"),
+        budget_currency="NZD",
+        fx_usd_to_local=Decimal("1.64"),
+    )
+    col, stubber = collector(config)
+
+    with stubber:
+        data = col.collect(now_fn=lambda: NOW)
+
+    assert data.headline.endswith("of $30.49 USD")
+    assert "NZD" not in data.headline
 
 
 def test_local_first_requires_fx_rate() -> None:

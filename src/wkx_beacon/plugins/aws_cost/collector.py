@@ -189,6 +189,15 @@ class AwsCostCollector:
         )
 
     def _headline(self, mtd_usd: Decimal, projected_usd: Decimal | None) -> str:
+        """Render the headline in the single currency selected by ``display``.
+
+        ``local-first`` expresses mtd, projected and budget in
+        ``budget_currency`` (mtd/projected are converted from USD via
+        ``fx``; the budget is already in that currency). ``usd`` expresses
+        everything in USD, converting the budget via ``fx`` when it is not
+        already denominated in USD.
+        """
+        budget = self.config.budget
         if self.config.display == "local-first" and self.config.fx_usd_to_local is not None:
             fx = self.config.fx_usd_to_local
             currency = self.config.budget_currency
@@ -198,6 +207,8 @@ class AwsCostCollector:
         else:
             currency = "USD"
             mtd, projected = mtd_usd, projected_usd
+            if self.config.budget_currency != "USD" and self.config.fx_usd_to_local is not None:
+                budget = _money(budget / self.config.fx_usd_to_local)
         if projected is None:
             return f"${mtd} {currency} MTD, no complete billing day yet"
-        return f"${mtd} {currency} MTD, projected ${projected} of ${self.config.budget} {currency}"
+        return f"${mtd} {currency} MTD, projected ${projected} of ${budget} {currency}"
