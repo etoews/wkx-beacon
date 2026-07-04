@@ -208,6 +208,9 @@ The following are prerequisites provisioned in the `wkx-platform` repository, no
 - Standard app plumbing: SSM parameters under `/wkx/beacon/<env>/`, data dir
   `/srv/data/beacon/<env>`, log group `/wkx/beacon/<env>`, the Caddy snippet, and DNS.
 
+The container runs as a non-root user with UID 10001, so a bind-mounted data directory must be
+writable by that UID.
+
 Authentication and authorisation are deliberately not implemented in beacon; see
 [ADR-0002](docs/adr/0002-authn-belongs-to-the-host-platform.md). The viewer is public until the
 WKX Platform makes its own authn decision.
