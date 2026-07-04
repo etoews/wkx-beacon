@@ -4,6 +4,7 @@ import logging
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import cast
 
 from wkx_beacon.config import ResolvedReport
@@ -63,15 +64,17 @@ def execute(
     data = run_stage("collect", report.collector.collect)
     if isinstance(data, ReportData):
         headline = data.headline
-        template_dir = report.collector.template_dir()
-        for renderer_name, renderer in report.renderers.items():
-            result = run_stage(
-                f"render:{renderer_name}", lambda r=renderer: r.render(data, template_dir)
-            )
-            if isinstance(result, list):
-                artefacts.extend(cast(list[Artefact], result))
-            else:
-                degraded = True
+        dir_result = run_stage("template-dir", report.collector.template_dir)
+        if stages[-1].ok:  # template_dir() legitimately returns None on success too
+            template_dir = cast(Path | None, dir_result)
+            for renderer_name, renderer in report.renderers.items():
+                result = run_stage(
+                    f"render:{renderer_name}", lambda r=renderer: r.render(data, template_dir)
+                )
+                if isinstance(result, list):
+                    artefacts.extend(cast(list[Artefact], result))
+                else:
+                    degraded = True
 
     stored = False
     if artefacts:
