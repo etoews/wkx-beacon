@@ -126,3 +126,25 @@ def test_list_runs_skips_corrupt_record_and_returns_valid_ones(tmp_path: Path) -
     runs = store.list_runs("platform-cost")
 
     assert [r.run_id for r in runs] == ["20260703T070015Z"]
+
+
+def test_read_record_refuses_run_id_traversal(tmp_path: Path) -> None:
+    """A run_id that walks out of the report's runs dir must not be read.
+
+    The runs dir must exist for real (as it would for any onboarded report)
+    so the ".." segments resolve through real directories to a real run.json
+    sitting just outside the runs tree; without the guard this would succeed.
+    """
+    store = Store(tmp_path)
+    store.write_record(record("legit-run"))  # makes reports/platform-cost/runs real
+    escaped = tmp_path / "etc"
+    escaped.mkdir()
+    (escaped / "run.json").write_text(record("escaped").model_dump_json())
+
+    assert store.read_record("platform-cost", "../../../etc") is None
+
+
+def test_read_record_refuses_traversal_in_report_name_and_run_id(tmp_path: Path) -> None:
+    store = Store(tmp_path)
+
+    assert store.read_record("../../etc", "../../passwd") is None

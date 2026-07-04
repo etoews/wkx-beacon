@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from jinja2 import Environment, FileSystemLoader
 
 from wkx_beacon.config import ReportConfig
 from wkx_beacon.exceptions import StoreError
@@ -32,7 +33,11 @@ def create_app(
     store: Store, report_configs: list[ReportConfig], scheduler: Any | None = None
 ) -> FastAPI:
     app = FastAPI(title="wkx-beacon", docs_url=None, redoc_url=None, openapi_url=None)
-    templates = Jinja2Templates(directory=TEMPLATES_DIR)
+    # Templates are named *.html.j2, so Starlette's default select_autoescape()
+    # (which keys off the final extension) would see ".j2" and leave
+    # autoescape OFF. Force it on explicitly, matching the artefact renderer.
+    template_env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=True)
+    templates = Jinja2Templates(env=template_env)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     configured = {c.name: c for c in report_configs}
 

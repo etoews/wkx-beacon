@@ -123,6 +123,47 @@ def test_corrupt_run_record_is_404_with_security_headers(tmp_path: Path) -> None
     assert response.headers["x-content-type-options"] == "nosniff"
 
 
+XSS_HEADLINE = '<script>alert(1)</script>"><img src=x>'
+
+
+def _seed_xss_run(tmp_path: Path) -> tuple[Store, str]:
+    store = Store(tmp_path)
+    run_id = new_run_id(NOW)
+    store.write_record(
+        RunRecord(
+            report_name="platform-cost",
+            run_id=run_id,
+            status="ok",
+            started_at=NOW,
+            finished_at=NOW,
+            stages=[StageOutcome(stage="collect", ok=True)],
+            headline=XSS_HEADLINE,
+            artefacts=[],
+        )
+    )
+    return store, run_id
+
+
+def test_run_detail_escapes_headline_html(tmp_path: Path) -> None:
+    store, run_id = _seed_xss_run(tmp_path)
+    client = TestClient(create_app(store, [CONFIG]))
+
+    response = client.get(f"/reports/platform-cost/runs/{run_id}")
+
+    assert "<script>alert(1)</script>" not in response.text
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in response.text
+
+
+def test_index_escapes_latest_headline_html(tmp_path: Path) -> None:
+    store, _ = _seed_xss_run(tmp_path)
+    client = TestClient(create_app(store, [CONFIG]))
+
+    response = client.get("/")
+
+    assert "<script>alert(1)</script>" not in response.text
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in response.text
+
+
 def test_unhandled_exception_returns_500_with_security_headers(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

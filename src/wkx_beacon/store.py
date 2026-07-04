@@ -53,6 +53,20 @@ class Store:
     def _run_dir(self, report_name: str, run_id: str) -> Path:
         return self.data_dir / "reports" / report_name / "runs" / run_id
 
+    def _guarded_run_dir(self, report_name: str, run_id: str) -> Path | None:
+        """Resolve the run directory for run_id, refusing traversal.
+
+        Mirrors the resolve()/is_relative_to() guard already used by
+        artefact_path and write_artefacts. run_id is caller-supplied (it
+        arrives via the web layer's URL path), so it must not be able to
+        walk out of the report's runs directory. Returns None if it does.
+        """
+        base = (self.data_dir / "reports" / report_name / "runs").resolve()
+        candidate = (base / run_id).resolve()
+        if not candidate.is_relative_to(base):
+            return None
+        return candidate
+
     def write_artefacts(self, report_name: str, run_id: str, artefacts: Sequence[Artefact]) -> None:
         target = self._run_dir(report_name, run_id) / ARTEFACTS_DIR
         try:
@@ -84,7 +98,10 @@ class Store:
         logger.info("stored run %s %s status=%s", record.report_name, record.run_id, record.status)
 
     def read_record(self, report_name: str, run_id: str) -> RunRecord | None:
-        path = self._run_dir(report_name, run_id) / RECORD_FILE
+        run_dir = self._guarded_run_dir(report_name, run_id)
+        if run_dir is None:
+            return None
+        path = run_dir / RECORD_FILE
         if not path.is_file():
             return None
         try:
@@ -93,7 +110,12 @@ class Store:
             raise StoreError(f"corrupt run record {report_name}/{run_id}: {e}") from e
 
     def list_runs(self, report_name: str) -> list[RunRecord]:
-        """All committed runs, newest first. Directories without run.json are ignored."""
+        """All committed runs, newest first. Directories without run.json are ignored.
+
+        run_dir.name comes from the filesystem, not caller input, so
+        traversal is not expected here; read_record's own guard still
+        applies per-call and any escape is skipped like a missing record.
+        """
         runs_dir = self.data_dir / "reports" / report_name / "runs"
         if not runs_dir.is_dir():
             return []
