@@ -1,0 +1,20 @@
+[[report]]
+name = "platform-cost"
+collector = "aws-cost"
+renderers = ["html"]
+notifiers = ["email-ses"]
+schedule = "0 7 * * *"
+timezone = "Pacific/Auckland"
+catch_up = false
+
+[report.collector_config]
+budget = 50.0
+budget_currency = "NZD"
+display = "local-first"
+fx_usd_to_local = 1.64
+day_display = "local-first"
+timezone = "Pacific/Auckland"
+
+[report.notifier_config.email-ses]
+to = ["you@example.com"]
+sender = "beacon@wingkongexchange.dev"
