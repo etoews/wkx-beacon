@@ -60,6 +60,11 @@ def test_report_schedule_must_be_a_valid_cron_expression() -> None:
         ReportConfig.model_validate(report_dict(schedule="99 99 * * *"))
 
 
+def test_report_schedule_rejects_six_field_cron_apscheduler_cannot_boot() -> None:
+    with pytest.raises(ValueError, match="cron expression"):
+        ReportConfig.model_validate(report_dict(schedule="0 7 * * * *"))
+
+
 def test_report_timezone_must_be_a_valid_timezone() -> None:
     with pytest.raises(ValueError, match="timezone"):
         ReportConfig.model_validate(report_dict(timezone="Mars/Olympus"))
@@ -101,3 +106,9 @@ def test_settings_reads_beacon_env_vars(monkeypatch: pytest.MonkeyPatch) -> None
     settings = Settings(_env_file=None)
 
     assert settings.data_dir == Path("/tmp/beacon-data")
+
+
+def test_settings_base_url_drops_trailing_slash(tmp_path: Path) -> None:
+    settings = Settings(_env_file=None, data_dir=tmp_path, base_url="http://beacon.test/")
+
+    assert settings.base_url == "http://beacon.test"

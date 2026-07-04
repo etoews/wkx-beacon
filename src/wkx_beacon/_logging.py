@@ -29,8 +29,11 @@ def configure() -> None:
     LOG_FORMAT=<other>   -> human-readable dev format (default)
     LOG_LEVEL=<level>    -> logging level name (default INFO)
     """
-    level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    requested_level = os.environ.get("LOG_LEVEL", "INFO").upper()
     fmt = os.environ.get("LOG_FORMAT", "dev").lower()
+
+    valid = requested_level in logging.getLevelNamesMapping()
+    level = requested_level if valid else "INFO"
 
     handler = logging.StreamHandler(sys.stdout)
     if fmt == "json":
@@ -47,3 +50,6 @@ def configure() -> None:
     root.handlers.clear()
     root.addHandler(handler)
     root.setLevel(level)
+
+    if not valid:
+        logging.warning("invalid LOG_LEVEL %r; falling back to INFO", requested_level)

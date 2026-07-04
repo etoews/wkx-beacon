@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -75,7 +75,7 @@ def create_app(
         return templates.TemplateResponse(request, "index.html.j2", {"rows": rows})
 
     @app.get("/reports/{name}")
-    def report(request: Request, name: str, page: int = 1) -> Response:
+    def report(request: Request, name: str, page: int = Query(1, ge=1)) -> Response:
         config = _known(name)
         runs = store.list_runs(name)
         start = (page - 1) * PAGE_SIZE
@@ -88,7 +88,7 @@ def create_app(
         return templates.TemplateResponse(request, "report.html.j2", context)
 
     @app.get("/reports/{name}/fragments/runs")
-    def runs_fragment(request: Request, name: str, page: int = 1) -> Response:
+    def runs_fragment(request: Request, name: str, page: int = Query(1, ge=1)) -> Response:
         config = _known(name)
         runs = store.list_runs(name)
         start = (page - 1) * PAGE_SIZE

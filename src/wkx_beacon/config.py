@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, cast
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from croniter import croniter
+from apscheduler.triggers.cron import CronTrigger
 from pydantic import BaseModel, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     config_file: Path = Path("beacon.toml")
     host: str = "0.0.0.0"
     port: int = 8000
+
+    @field_validator("base_url")
+    @classmethod
+    def base_url_has_no_trailing_slash(cls, v: str) -> str:
+        return v.rstrip("/")
 
 
 class ReportConfig(BaseModel):
@@ -62,8 +67,10 @@ class ReportConfig(BaseModel):
     @field_validator("schedule")
     @classmethod
     def schedule_is_valid_cron(cls, v: str) -> str:
-        if not croniter.is_valid(v):
-            raise ValueError(f"{v!r} is not a valid cron expression")
+        try:
+            CronTrigger.from_crontab(v)
+        except ValueError as e:
+            raise ValueError(f"{v!r} is not a valid cron expression: {e}") from e
         return v
 
     @field_validator("timezone")

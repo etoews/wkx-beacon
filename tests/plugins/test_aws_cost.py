@@ -115,6 +115,16 @@ def test_local_first_requires_fx_rate() -> None:
         AwsCostConfig(budget=Decimal("50"), display="local-first")
 
 
+def test_local_first_rejects_usd_budget_currency() -> None:
+    with pytest.raises(ValueError, match=r"local-first.*USD"):
+        AwsCostConfig(
+            budget=Decimal("50"),
+            budget_currency="USD",
+            display="local-first",
+            fx_usd_to_local=Decimal("1.64"),
+        )
+
+
 def test_client_errors_become_collect_errors() -> None:
     config = AwsCostConfig(budget=Decimal("30"))
     col, stubber = collector(config)

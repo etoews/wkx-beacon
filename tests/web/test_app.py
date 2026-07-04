@@ -89,6 +89,13 @@ def test_security_headers_are_set(tmp_path: Path) -> None:
     assert "default-src 'self'" in response.headers["content-security-policy"]
 
 
+def test_report_page_must_be_at_least_one(tmp_path: Path) -> None:
+    client, _ = seeded_client(tmp_path)
+
+    assert client.get("/reports/platform-cost?page=0").status_code == 422
+    assert client.get("/reports/platform-cost?page=1").status_code == 200
+
+
 def test_healthz(tmp_path: Path) -> None:
     client, _ = seeded_client(tmp_path)
 

@@ -38,6 +38,16 @@ class AwsCostConfig(BaseModel):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def local_first_needs_a_non_usd_budget_currency(self) -> AwsCostConfig:
+        if self.display == "local-first" and self.budget_currency == "USD":
+            msg = (
+                "display 'local-first' with budget_currency 'USD' would mislabel "
+                "USD converted by fx as USD; use display='usd' or a non-USD budget_currency"
+            )
+            raise ValueError(msg)
+        return self
+
 
 class DailyCost(BaseModel):
     day: date
