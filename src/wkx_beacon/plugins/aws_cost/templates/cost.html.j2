@@ -1,0 +1,80 @@
+{% macro money(usd) -%}
+  {%- if data.display == "local-first" -%}
+    ${{ "%.2f" | format(usd * data.fx_usd_to_local) }} {{ data.budget_currency }}
+  {%- else -%}
+    ${{ "%.2f" | format(usd) }} USD
+  {%- endif -%}
+{%- endmacro -%}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ data.billing_month }} cost report</title>
+<style>
+  body { margin: 0 auto; max-width: 860px; padding: 24px; color: #23262c;
+         font-family: system-ui, sans-serif; }
+  h1 { font-size: 1.3em; } .muted { color: #6b7076; font-size: 0.85em; }
+  .tiles { display: flex; gap: 12px; flex-wrap: wrap; }
+  .tile { border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; flex: 1 1 150px; }
+  .tile .v { font-size: 1.5em; font-weight: 600; }
+  .meter { position: relative; height: 12px; border-radius: 6px; background: #cde2fb; margin: 18px 0 6px; }
+  .meter .fill { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: #2a78d6; }
+  .meter .proj { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #52514e; }
+  .bars { display: flex; align-items: flex-end; gap: 2px; height: 120px; margin-top: 18px; }
+  .bars div { flex: 1; background: #2a78d6; border-radius: 3px 3px 0 0; }
+  table { border-collapse: collapse; margin-top: 14px; width: 100%; }
+  td, th { text-align: left; padding: 5px 8px; border-bottom: 1px solid #eee; font-size: 0.9em; }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<h1>Platform cost · {{ data.billing_month }}</h1>
+<p>{{ data.headline }}</p>
+<p class="muted">Generated {{ data.generated_at.isoformat() }} · grouped by cost-allocation tags</p>
+
+<div class="tiles">
+  <div class="tile"><div class="muted">Month-to-date</div><div class="v">{{ money(data.mtd_usd) }}</div></div>
+  <div class="tile"><div class="muted">Projected month-end</div>
+    <div class="v">{% if data.projected_usd is not none %}{{ money(data.projected_usd) }}{% else %}n/a{% endif %}</div></div>
+  <div class="tile"><div class="muted">Latest billing day{% if data.latest_day %} ({{ data.daily[-1].label }}){% endif %}</div>
+    <div class="v">{{ money(data.latest_day_usd) }}</div></div>
+  <div class="tile"><div class="muted">Budget</div><div class="v">${{ "%.2f" | format(data.budget) }} {{ data.budget_currency }}</div></div>
+</div>
+
+{% set budget_usd = data.budget / data.fx_usd_to_local if data.budget_currency != "USD" else data.budget %}
+<div class="meter">
+  <div class="fill" style="width: {{ [100, (100 * data.mtd_usd / budget_usd) | round(1)] | min }}%"></div>
+  {% if data.projected_usd is not none %}
+  <div class="proj" style="left: {{ [99, (100 * data.projected_usd / budget_usd) | round(1)] | min }}%"></div>
+  {% endif %}
+</div>
+<p class="muted">Fill is month-to-date; the tick is the projected month-end.</p>
+
+{% set max_usd = data.daily | map(attribute="usd") | max if data.daily else 1 %}
+<div class="bars">
+  {% for d in data.daily %}<div style="height: {{ (100 * d.usd / max_usd) | round(1) }}%" title="{{ d.label }} · {{ money(d.usd) }}"></div>{% endfor %}
+</div>
+<p class="muted">Daily spend, last {{ data.daily | length }} billing days.</p>
+
+<table>
+  <tr><th>By service</th><th></th></tr>
+  {% for t in data.by_service %}<tr><td>{{ t.key }}</td><td>{{ money(t.usd) }}</td></tr>{% endfor %}
+</table>
+<table>
+  <tr><th>By env</th><th></th></tr>
+  {% for t in data.by_env %}<tr><td>{{ t.key }}</td><td>{{ money(t.usd) }}</td></tr>{% endfor %}
+</table>
+
+<details><summary class="muted">Daily spend as a table</summary>
+<table>{% for d in data.daily %}<tr><td>{{ d.label }}</td><td>{{ money(d.usd) }}</td></tr>{% endfor %}</table>
+</details>
+
+<p class="muted">
+  Source: AWS Cost Explorer, unblended cost, USD.
+  {% if data.display == "local-first" %}Displayed in {{ data.budget_currency }} at a configured static rate of {{ data.fx_usd_to_local }} {{ data.budget_currency }}/USD.{% endif %}
+  Billing days are UTC{% if data.day_display == "local-first" %}; date labels show the {{ data.timezone }} date covering most of each billing day{% endif %}.
+  No account identifiers are rendered.
+</p>
+</body>
+</html>
