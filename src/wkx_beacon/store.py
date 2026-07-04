@@ -68,10 +68,17 @@ class Store:
             raise StoreError(f"cannot write artefacts for {report_name}/{run_id}: {e}") from e
 
     def write_record(self, record: RunRecord) -> None:
+        """Write run.json atomically: write a tmp file, then replace onto the real name.
+
+        A crash between the two steps leaves the previous commit (or nothing),
+        never a half-written run.json.
+        """
         run_dir = self._run_dir(record.report_name, record.run_id)
+        tmp_path = run_dir / f"{RECORD_FILE}.tmp"
         try:
             run_dir.mkdir(parents=True, exist_ok=True)
-            (run_dir / RECORD_FILE).write_text(record.model_dump_json(indent=2))
+            tmp_path.write_text(record.model_dump_json(indent=2))
+            tmp_path.replace(run_dir / RECORD_FILE)
         except OSError as e:
             raise StoreError(f"cannot write run record {record.run_id}: {e}") from e
         logger.info("stored run %s %s status=%s", record.report_name, record.run_id, record.status)

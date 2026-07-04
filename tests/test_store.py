@@ -86,6 +86,35 @@ def test_read_record_raises_store_error_on_corrupt_json(tmp_path: Path) -> None:
         store.read_record("platform-cost", "20260704T070015Z")
 
 
+def test_write_record_is_atomic_via_tmp_file_and_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """write_record must write run.json.tmp then Path.replace it onto run.json.
+
+    A crash between those two steps leaves run.json untouched (still the
+    previous commit) or absent, never a half-written file.
+    """
+    store = Store(tmp_path)
+    run_id = new_run_id(NOW)
+    run_dir = store._run_dir("platform-cost", run_id)
+    replace_calls: list[Path] = []
+    original_replace = Path.replace
+
+    def spy_replace(self: Path, target: str) -> Path:
+        replace_calls.append(self)
+        return original_replace(self, target)
+
+    monkeypatch.setattr(Path, "replace", spy_replace)
+
+    store.write_record(record(run_id))
+
+    assert replace_calls == [run_dir / "run.json.tmp"]
+    assert not (run_dir / "run.json.tmp").exists()
+    assert (run_dir / "run.json").is_file()
+    read = store.read_record("platform-cost", run_id)
+    assert read is not None and read.headline == "fine"
+
+
 def test_list_runs_skips_corrupt_record_and_returns_valid_ones(tmp_path: Path) -> None:
     store = Store(tmp_path)
     store.write_record(record("20260703T070015Z"))

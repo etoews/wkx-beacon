@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import cast
 
 from wkx_beacon.config import ResolvedReport
-from wkx_beacon.exceptions import BeaconError
 from wkx_beacon.plugin import Artefact, ReportData, RunStatus, RunSummary
 from wkx_beacon.store import RunRecord, StageOutcome, Store, new_run_id
 
@@ -42,7 +41,10 @@ def execute(
         t0 = time.monotonic()
         try:
             result = fn()
-        except BeaconError as e:
+        except Exception as e:
+            # Plugins are contract-bound to raise BeaconError subclasses, but a buggy
+            # third-party plugin can raise anything. BaseException (KeyboardInterrupt,
+            # SystemExit) is not caught here and still propagates.
             stages.append(
                 StageOutcome(
                     stage=stage,
@@ -97,17 +99,20 @@ def execute(
         else f"{base_url}/reports/{name}/runs/{run_id}"
     )
 
+    # One summary, built once, shared by every notifier: it must reflect the
+    # collect/render/store outcome only, never an earlier notifier's failure.
+    summary = RunSummary(
+        report_name=name,
+        run_id=run_id,
+        status=status,
+        headline=headline,
+        failed_stage=failed_stage,
+        error=error,
+        report_url=report_url,
+    )
+
     # Notify before finalising the record so notify outcomes are part of it.
     for notifier_name, notifier in report.notifiers.items():
-        summary = RunSummary(
-            report_name=name,
-            run_id=run_id,
-            status=status,
-            headline=headline,
-            failed_stage=failed_stage,
-            error=error,
-            report_url=report_url,
-        )
         run_stage(f"notify:{notifier_name}", lambda n=notifier, s=summary: n.notify(s))
         if not stages[-1].ok and status == "ok":
             status = "degraded"
