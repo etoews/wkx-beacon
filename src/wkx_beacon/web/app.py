@@ -49,12 +49,14 @@ def create_app(
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         if scheduler is not None and not scheduler.running:
+            logger.warning("healthz failed: scheduler not running")
             raise HTTPException(status_code=503, detail="scheduler not running")
         probe = store.data_dir / ".healthz"
         try:
             probe.parent.mkdir(parents=True, exist_ok=True)
             probe.write_text("ok")
         except OSError as e:
+            logger.warning("healthz failed: data dir %s not writable: %s", store.data_dir, e)
             raise HTTPException(status_code=503, detail="data dir not writable") from e
         return {"status": "ok"}
 
