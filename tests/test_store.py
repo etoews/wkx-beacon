@@ -65,6 +65,23 @@ def test_artefact_path_refuses_traversal(tmp_path: Path) -> None:
     assert store.artefact_path("platform-cost", "20260704T070015Z", "../../etc/passwd") is None
 
 
+def test_artefact_path_refuses_run_id_traversal(tmp_path: Path) -> None:
+    """A run_id that walks out of the runs dir must not resolve an artefact.
+
+    The runs dir is made real so the ".." segments resolve through real
+    directories to a planted file just outside the runs tree; without the
+    run_id guard, a bare filename would then resolve against that escaped dir.
+    """
+    store = Store(tmp_path)
+    artefact = Artefact(filename="report.html", media_type="text/html", content=b"<html/>")
+    store.write_artefacts("platform-cost", "legit-run", [artefact])  # makes the runs dir real
+    escaped = tmp_path / "escaped" / "artifacts"
+    escaped.mkdir(parents=True)
+    (escaped / "secret.html").write_text("secret")
+
+    assert store.artefact_path("platform-cost", "../../../escaped", "secret.html") is None
+
+
 def test_write_artefacts_refuses_traversal(tmp_path: Path) -> None:
     store = Store(tmp_path)
     artefact = Artefact(filename="../evil.html", media_type="text/html", content=b"pwned")

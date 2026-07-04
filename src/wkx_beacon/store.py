@@ -136,8 +136,15 @@ class Store:
         return next((r for r in self.list_runs(report_name) if r.published), None)
 
     def artefact_path(self, report_name: str, run_id: str, filename: str) -> Path | None:
-        """Resolve an artefact path; refuses anything escaping the artefacts dir."""
-        base = (self._run_dir(report_name, run_id) / ARTEFACTS_DIR).resolve()
+        """Resolve an artefact path; refuses anything escaping the artefacts dir.
+
+        Both run_id (via _guarded_run_dir) and filename are checked, so neither
+        caller-supplied segment can walk out of the report's runs directory.
+        """
+        run_dir = self._guarded_run_dir(report_name, run_id)
+        if run_dir is None:
+            return None
+        base = (run_dir / ARTEFACTS_DIR).resolve()
         candidate = (base / filename).resolve()
         if not candidate.is_relative_to(base) or not candidate.is_file():
             return None
