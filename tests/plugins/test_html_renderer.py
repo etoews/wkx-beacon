@@ -1,5 +1,6 @@
 from datetime import UTC, date, datetime
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
@@ -63,6 +64,40 @@ def test_missing_template_dir_is_a_render_error() -> None:
 
     with pytest.raises(RenderError, match="template"):
         renderer.render(fixture_data(), None)
+
+
+def test_template_not_found_is_a_render_error(tmp_path: Path) -> None:
+    renderer = HtmlRenderer(HtmlRendererConfig())
+
+    with pytest.raises(RenderError, match="not found"):
+        renderer.render(fixture_data(), tmp_path)
+
+
+def test_generic_render_failure_is_a_render_error(tmp_path: Path) -> None:
+    renderer = HtmlRenderer(HtmlRendererConfig())
+    (tmp_path / "cost.html.j2").write_text("{% if %}")
+
+    with pytest.raises(RenderError):
+        renderer.render(fixture_data(), tmp_path)
+
+
+def test_zero_spend_days_do_not_crash_the_daily_bars() -> None:
+    renderer = HtmlRenderer(HtmlRendererConfig())
+    template_dir = AwsCostCollector(AwsCostConfig(budget=Decimal("30"))).template_dir()
+    data = fixture_data().model_copy(
+        update={
+            "daily": [
+                DailyCost(day=date(2026, 7, 1), label="2026-07-01", usd=Decimal("0.00")),
+                DailyCost(day=date(2026, 7, 2), label="2026-07-02", usd=Decimal("0.00")),
+            ],
+            "latest_day_usd": Decimal("0.00"),
+            "mtd_usd": Decimal("0.00"),
+        }
+    )
+
+    artefacts = renderer.render(data, template_dir)
+
+    assert artefacts[0].content
 
 
 def test_escapes_untrusted_strings_in_tag_cost_keys() -> None:

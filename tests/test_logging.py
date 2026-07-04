@@ -1,5 +1,6 @@
 """Tests for wkx_beacon._logging.configure()."""
 
+import json
 import logging
 from collections.abc import Generator
 
@@ -53,3 +54,52 @@ def test_valid_log_level_is_case_insensitive(monkeypatch: pytest.MonkeyPatch) ->
     configure()
 
     assert logging.getLogger().level == logging.DEBUG
+
+
+def test_json_log_format_produces_parseable_json_with_expected_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LOG_FORMAT", "json")
+
+    configure()
+
+    formatter = logging.getLogger().handlers[0].formatter
+    assert formatter is not None
+    record = logging.LogRecord(
+        name="wkx_beacon.test",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg="hello %s",
+        args=("world",),
+        exc_info=None,
+    )
+
+    payload = json.loads(formatter.format(record))
+
+    assert set(payload) == {"ts", "level", "logger", "msg"}
+    assert payload["level"] == "INFO"
+    assert payload["logger"] == "wkx_beacon.test"
+    assert payload["msg"] == "hello world"
+
+
+def test_default_dev_log_format_is_not_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LOG_FORMAT", raising=False)
+
+    configure()
+
+    formatter = logging.getLogger().handlers[0].formatter
+    assert formatter is not None
+    record = logging.LogRecord(
+        name="wkx_beacon.test",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg="hello",
+        args=(),
+        exc_info=None,
+    )
+
+    formatted = formatter.format(record)
+
+    assert not formatted.startswith("{")

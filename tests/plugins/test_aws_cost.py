@@ -133,3 +133,71 @@ def test_client_errors_become_collect_errors() -> None:
     with stubber, pytest.raises(CollectError):
         col.collect(now_fn=lambda: NOW)
         col.collect(now_fn=lambda: NOW)  # second call hits the stubbed error
+
+
+def test_zero_complete_billing_days_yields_no_projection() -> None:
+    # 2026-07-01: month_start and today are the same day, so complete_days == 0.
+    config = AwsCostConfig(budget=Decimal("30"))
+    client = boto3.client(
+        "ce",
+        region_name="us-east-1",
+        aws_access_key_id="x",
+        aws_secret_access_key="x",
+    )
+    stubber = Stubber(client)
+    expected_params = {
+        "TimePeriod": {"Start": "2026-06-01", "End": "2026-07-01"},
+        "Granularity": "DAILY",
+        "Metrics": ["UnblendedCost"],
+        "GroupBy": [{"Type": "TAG", "Key": "Service"}, {"Type": "TAG", "Key": "Env"}],
+    }
+    response: dict[str, Any] = {"ResultsByTime": [], "DimensionValueAttributes": []}
+    stubber.add_response("get_cost_and_usage", response, expected_params)
+    col = AwsCostCollector(config, ce_client=client)
+
+    with stubber:
+        data = col.collect(now_fn=lambda: datetime(2026, 7, 1, 5, 0, tzinfo=UTC))
+
+    assert data.projected_usd is None
+    assert data.latest_day is None
+    assert "no complete billing day yet" in data.headline
+
+
+def test_group_key_without_dollar_sign_folds_into_untagged() -> None:
+    config = AwsCostConfig(budget=Decimal("30"))
+    client = boto3.client(
+        "ce",
+        region_name="us-east-1",
+        aws_access_key_id="x",
+        aws_secret_access_key="x",
+    )
+    stubber = Stubber(client)
+    expected_params = {
+        "TimePeriod": {"Start": "2026-06-04", "End": "2026-07-04"},
+        "Granularity": "DAILY",
+        "Metrics": ["UnblendedCost"],
+        "GroupBy": [{"Type": "TAG", "Key": "Service"}, {"Type": "TAG", "Key": "Env"}],
+    }
+    response: dict[str, Any] = {
+        "ResultsByTime": [
+            {
+                "TimePeriod": {"Start": "2026-07-01", "End": "2026-07-02"},
+                "Groups": [
+                    {
+                        "Keys": ["NoDollarSign", "Env$prod"],
+                        "Metrics": {"UnblendedCost": {"Amount": "1.00", "Unit": "USD"}},
+                    }
+                ],
+                "Total": {},
+                "Estimated": True,
+            }
+        ],
+        "DimensionValueAttributes": [],
+    }
+    stubber.add_response("get_cost_and_usage", response, expected_params)
+    col = AwsCostCollector(config, ce_client=client)
+
+    with stubber:
+        data = col.collect(now_fn=lambda: NOW)
+
+    assert {t.key: t.usd for t in data.by_service} == {"untagged": Decimal("1.00")}

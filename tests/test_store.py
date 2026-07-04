@@ -74,6 +74,7 @@ def test_write_artefacts_refuses_traversal(tmp_path: Path) -> None:
 
     assert not (tmp_path / "reports" / "platform-cost" / "evil.html").exists()
     assert not (tmp_path / "evil.html").exists()
+    assert not list(tmp_path.rglob("evil.html"))
 
 
 def test_read_record_raises_store_error_on_corrupt_json(tmp_path: Path) -> None:

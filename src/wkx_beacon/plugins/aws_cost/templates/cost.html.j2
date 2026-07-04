@@ -51,7 +51,7 @@
 </div>
 <p class="muted">Fill is month-to-date; the tick is the projected month-end.</p>
 
-{% set max_usd = data.daily | map(attribute="usd") | max if data.daily else 1 %}
+{% set max_usd = (data.daily | map(attribute="usd") | max if data.daily else 1) or 1 %}
 <div class="bars">
   {% for d in data.daily %}<div style="height: {{ (100 * d.usd / max_usd) | round(1) }}%" title="{{ d.label }} · {{ money(d.usd) }}"></div>{% endfor %}
 </div>

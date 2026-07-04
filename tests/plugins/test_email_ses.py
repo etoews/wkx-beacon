@@ -65,9 +65,41 @@ def test_failed_email_subject_names_the_stage() -> None:
     stubber.assert_no_pending_responses()
 
 
+def test_degraded_email_subject_carries_the_headline() -> None:
+    n, stubber = notifier()
+    stubber.add_response(
+        "send_email",
+        {"MessageId": "1"},
+        expected_params("beacon · platform-cost · DEGRADED · $7.59 NZD MTD"),
+    )
+
+    with stubber:
+        n.notify(summary(status="degraded"))
+
+    stubber.assert_no_pending_responses()
+
+
+def test_failed_email_subject_falls_back_to_unknown_stage() -> None:
+    n, stubber = notifier()
+    stubber.add_response(
+        "send_email",
+        {"MessageId": "1"},
+        expected_params("beacon · platform-cost · FAILED at unknown stage"),
+    )
+
+    with stubber:
+        n.notify(summary(status="failed", failed_stage=None))
+
+    stubber.assert_no_pending_responses()
+
+
 def test_ses_errors_become_notify_errors() -> None:
     n, stubber = notifier()
-    stubber.add_client_error("send_email", "MessageRejected")
+    stubber.add_client_error(
+        "send_email",
+        "MessageRejected",
+        expected_params=expected_params("beacon · platform-cost · $7.59 NZD MTD"),
+    )
 
     with stubber, pytest.raises(NotifyError):
         n.notify(summary())

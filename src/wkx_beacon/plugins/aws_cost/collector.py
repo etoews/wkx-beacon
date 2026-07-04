@@ -141,8 +141,10 @@ class AwsCostCollector:
             day_total = Decimal("0")
             for group in bucket["Groups"]:
                 amount = Decimal(group["Metrics"]["UnblendedCost"]["Amount"])
-                service = group["Keys"][0].split("$", 1)[1] or "untagged"
-                env = group["Keys"][1].split("$", 1)[1] or "untagged"
+                # partition()[2] is "" both when the key has no "$" separator
+                # and when the tag value after "$" is empty; either way it's untagged.
+                service = group["Keys"][0].partition("$")[2] or "untagged"
+                env = group["Keys"][1].partition("$")[2] or "untagged"
                 day_total += amount
                 if day >= month_start:
                     by_service[service] = by_service.get(service, Decimal("0")) + amount
