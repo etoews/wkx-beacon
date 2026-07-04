@@ -1,0 +1,13 @@
+{% for run in runs %}
+<tr>
+  <td><a href="/reports/{{ config.name }}/runs/{{ run.run_id }}">{{ run.run_id }}</a></td>
+  <td>{{ run.headline }}</td>
+  <td><span class="status-{{ run.status }}">{{ run.status }}</span></td>
+</tr>
+{% endfor %}
+{% if has_more %}
+<tr id="more-row">
+  <td colspan="3"><a href="#" hx-get="/reports/{{ config.name }}/fragments/runs?page={{ page + 1 }}"
+      hx-target="#more-row" hx-swap="outerHTML">older runs</a></td>
+</tr>
+{% endif %}

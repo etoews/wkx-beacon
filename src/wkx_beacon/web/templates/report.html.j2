@@ -1,0 +1,7 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ config.name }} · beacon{% endblock %}
+{% block content %}
+<h1>{{ config.name }}</h1>
+<p class="muted">{{ config.collector }} → {{ config.renderers | join(", ") }} → {{ config.notifiers | join(", ") }}</p>
+<table id="runs">{% include "_runs.html.j2" %}</table>
+{% endblock %}

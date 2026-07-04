@@ -1,0 +1,15 @@
+{% extends "base.html.j2" %}
+{% block content %}
+<table>
+  <tr><th>Report</th><th>Latest</th><th>Status</th></tr>
+  {% for row in rows %}
+  <tr>
+    <td><a href="/reports/{{ row.config.name }}">{{ row.config.name }}</a>
+        <div class="muted">{{ row.config.schedule }} · {{ row.config.timezone }}</div></td>
+    <td>{{ row.latest.headline if row.latest else "no runs yet" }}</td>
+    <td>{% if row.latest %}<span class="status-{{ row.latest.status }}">{{ row.latest.status }}</span>
+        {% else %}<span class="muted">-</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

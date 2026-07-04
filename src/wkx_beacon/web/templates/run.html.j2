@@ -1,0 +1,10 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ record.run_id }} · beacon{% endblock %}
+{% block content %}
+<h1>{{ record.report_name }} · {{ record.run_id }}</h1>
+<p><span class="status-{{ record.status }}">{{ record.status }}</span> · {{ record.headline }}</p>
+<p class="muted">{% for stage in record.stages %}{{ stage.stage }} {{ "ok" if stage.ok else "FAILED" }} ({{ stage.duration_ms }}ms){{ " · " if not loop.last }}{% endfor %}</p>
+{% for filename in record.artefacts %}
+<iframe src="/reports/{{ record.report_name }}/runs/{{ record.run_id }}/artifacts/{{ filename }}" title="{{ filename }}"></iframe>
+{% endfor %}
+{% endblock %}
