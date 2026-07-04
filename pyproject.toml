@@ -39,11 +39,11 @@ packages = ["src/wkx_beacon"]
 
 [dependency-groups]
 dev = [
+    "httpx2>=2.5",
     "pytest>=8",
     "pytest-cov>=5",
     "ruff>=0.8",
     "ty>=0.0.1",
-    "httpx2>=2.5",
 ]
 
 [tool.ruff]

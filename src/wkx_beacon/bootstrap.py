@@ -21,7 +21,7 @@ def bootstrap(
     settings: Settings | None = None, registry: PluginRegistry | None = None
 ) -> AppContext:
     """Fail here, at boot, not at 07:00."""
-    settings = settings or Settings()  # type: ignore
+    settings = settings or Settings()  # ty: ignore[missing-argument]
     registry = registry or discover()
     config = load_config(settings.config_file)
     reports = resolve(config, registry)

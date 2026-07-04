@@ -27,6 +27,7 @@ def serve() -> None:
     context = bootstrap()
     scheduler = build_scheduler(context.reports, context.store, context.settings.base_url)
     scheduler.start()
+    logger.info("scheduler started with %d report(s)", len(context.reports))
     web_app = create_app(context.store, [r.config for r in context.reports], scheduler=scheduler)
     try:
         uvicorn.run(
@@ -36,6 +37,7 @@ def serve() -> None:
             log_config=None,
         )
     finally:
+        logger.info("shutting down scheduler")
         scheduler.shutdown(wait=False)
 
 

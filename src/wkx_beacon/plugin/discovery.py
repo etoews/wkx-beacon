@@ -4,7 +4,7 @@ import logging
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points
-from typing import Any, Protocol
+from typing import Protocol
 
 from wkx_beacon.exceptions import ConfigError
 
@@ -31,7 +31,7 @@ class PluginRegistry:
     notifiers: dict[str, type] = field(default_factory=dict)
 
 
-def _default_entry_points(group: str) -> Iterable[Any]:
+def _default_entry_points(group: str) -> Iterable[EntryPointLike]:
     return entry_points(group=group)
 
 

@@ -170,6 +170,8 @@ Unknown plugin names, unknown config keys, and missing entry points are startup 
 
 APScheduler inside the FastAPI process (started via lifespan). One timezone-aware cron trigger per report, `max_instances=1` so a slow run never stacks on itself. Boot catch-up is per-report config (`catch_up = true`), default off. When enabled, a report whose last successful run predates its previous scheduled fire time runs immediately on boot. When off, a missed fire stays missed until the next cron.
 
+As built: the scheduler is started and stopped by the `serve` command rather than a FastAPI lifespan hook; behaviour is equivalent for the single-process container.
+
 ### Pipeline and failure model
 
 Each run gets a run ID (UTC timestamp based). Stages run sequentially: collect, render, store, notify. Third-party exceptions are translated at the boundary into a `BeaconError` hierarchy (`CollectError`, `RenderError`, `NotifyError`). Within a run, boto3's standard retry mode absorbs transient blips; there is no pipeline-level retry queue (the next cron is tomorrow).
@@ -190,6 +192,8 @@ Filesystem only, no database:
 ```
 
 `run.json` is written last, as the commit marker; the viewer ignores run directories without one. An in-memory index is built by scanning at startup and updated after each run. Retention is keep-everything for now; a daily HTML page and a small JSON file cost effectively nothing on the EBS volume.
+
+As built: the MVP viewer reads the filesystem store directly per request; the in-memory index is deferred until scale demands it.
 
 ### Health and observability
 
