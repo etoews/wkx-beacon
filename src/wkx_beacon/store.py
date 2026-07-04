@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from wkx_beacon.exceptions import StoreError
 from wkx_beacon.plugin import Artefact, RunStatus
@@ -57,8 +57,13 @@ class Store:
         target = self._run_dir(report_name, run_id) / ARTEFACTS_DIR
         try:
             target.mkdir(parents=True, exist_ok=True)
+            base = target.resolve()
             for artefact in artefacts:
-                (target / artefact.filename).write_bytes(artefact.content)
+                candidate = (target / artefact.filename).resolve()
+                if not candidate.is_relative_to(base):
+                    msg = f"artefact filename escapes artefacts dir: {artefact.filename}"
+                    raise StoreError(msg)
+                candidate.write_bytes(artefact.content)
         except OSError as e:
             raise StoreError(f"cannot write artefacts for {report_name}/{run_id}: {e}") from e
 
@@ -75,18 +80,27 @@ class Store:
         path = self._run_dir(report_name, run_id) / RECORD_FILE
         if not path.is_file():
             return None
-        return RunRecord.model_validate_json(path.read_text())
+        try:
+            return RunRecord.model_validate_json(path.read_text())
+        except (ValidationError, OSError, ValueError) as e:
+            raise StoreError(f"corrupt run record {report_name}/{run_id}: {e}") from e
 
     def list_runs(self, report_name: str) -> list[RunRecord]:
         """All committed runs, newest first. Directories without run.json are ignored."""
         runs_dir = self.data_dir / "reports" / report_name / "runs"
         if not runs_dir.is_dir():
             return []
-        records = [
-            record
-            for run_dir in sorted(runs_dir.iterdir(), reverse=True)
-            if (record := self.read_record(report_name, run_dir.name)) is not None
-        ]
+        records = []
+        for run_dir in sorted(runs_dir.iterdir(), reverse=True):
+            try:
+                record = self.read_record(report_name, run_dir.name)
+            except StoreError as e:
+                logger.warning(
+                    "skipping corrupt run record %s/%s: %s", report_name, run_dir.name, e
+                )
+                continue
+            if record is not None:
+                records.append(record)
         return records
 
     def latest_published(self, report_name: str) -> RunRecord | None:
