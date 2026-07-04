@@ -8,6 +8,8 @@ import os
 import sys
 from datetime import UTC, datetime
 
+logger = logging.getLogger(__name__)
+
 
 class _JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
@@ -52,4 +54,4 @@ def configure() -> None:
     root.setLevel(level)
 
     if not valid:
-        logging.warning("invalid LOG_LEVEL %r; falling back to INFO", requested_level)
+        logger.warning("invalid LOG_LEVEL %r; falling back to INFO", requested_level)

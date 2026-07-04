@@ -96,6 +96,13 @@ def test_report_page_must_be_at_least_one(tmp_path: Path) -> None:
     assert client.get("/reports/platform-cost?page=1").status_code == 200
 
 
+def test_fragment_runs_page_must_be_at_least_one(tmp_path: Path) -> None:
+    client, _ = seeded_client(tmp_path)
+
+    assert client.get("/reports/platform-cost/fragments/runs?page=0").status_code == 422
+    assert client.get("/reports/platform-cost/fragments/runs?page=1").status_code == 200
+
+
 def test_healthz(tmp_path: Path) -> None:
     client, _ = seeded_client(tmp_path)
 
