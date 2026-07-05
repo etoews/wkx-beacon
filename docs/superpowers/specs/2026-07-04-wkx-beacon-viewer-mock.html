@@ -1,0 +1,421 @@
+<title>wkx-beacon viewer mockup</title>
+<style>
+  :root {
+    --plane: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --ring: rgba(11, 11, 11, 0.10);
+    --brand: #B97A0A;
+    --brand-soft: #F6E9CE;
+    --series: #2a78d6;
+    --series-hover: #1c5cab;
+    --series-track: #cde2fb;
+    --good: #0ca30c;
+    --good-text: #006300;
+    --bad-text: #a02c2c;
+    --critical: #d03b3b;
+    --crit-soft: #f6dedc;
+    --good-soft: #ddf0dd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --plane: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --ring: rgba(255, 255, 255, 0.10);
+      --brand: #E3A93F;
+      --brand-soft: #33291454;
+      --series: #3987e5;
+      --series-hover: #6da7ec;
+      --series-track: #0d366b;
+      --good: #0ca30c;
+      --good-text: #0ca30c;
+      --bad-text: #e66767;
+      --critical: #d03b3b;
+      --crit-soft: #3a1e1c;
+      --good-soft: #10321080;
+    }
+  }
+  :root[data-theme="light"] {
+    --plane: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --ring: rgba(11, 11, 11, 0.10);
+    --brand: #B97A0A;
+    --brand-soft: #F6E9CE;
+    --series: #2a78d6;
+    --series-hover: #1c5cab;
+    --series-track: #cde2fb;
+    --good: #0ca30c;
+    --good-text: #006300;
+    --bad-text: #a02c2c;
+    --critical: #d03b3b;
+    --crit-soft: #f6dedc;
+    --good-soft: #ddf0dd;
+  }
+  :root[data-theme="dark"] {
+    --plane: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --ring: rgba(255, 255, 255, 0.10);
+    --brand: #E3A93F;
+    --brand-soft: #33291454;
+    --series: #3987e5;
+    --series-hover: #6da7ec;
+    --series-track: #0d366b;
+    --good: #0ca30c;
+    --good-text: #0ca30c;
+    --bad-text: #e66767;
+    --critical: #d03b3b;
+    --crit-soft: #3a1e1c;
+    --good-soft: #10321080;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--plane);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 44px 20px 72px; display: flex; flex-direction: column; gap: 40px; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+  header.page-head { display: flex; flex-direction: column; gap: 8px; }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--brand);
+  }
+  h1 { margin: 0; font-size: clamp(24px, 4vw, 32px); font-weight: 650; letter-spacing: -0.01em; text-wrap: balance; }
+  .lede { margin: 0; color: var(--ink-2); font-size: 15px; max-width: 64ch; }
+
+  .screen-label {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 13px; color: var(--muted);
+  }
+  .screen-label .mono { color: var(--ink-2); font-size: 12px; }
+
+  /* browser frame */
+  .frame { border: 1px solid var(--ring); border-radius: 12px; overflow: hidden; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.06); }
+  .frame-bar { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--grid); }
+  .frame-bar .dots { display: flex; gap: 5px; }
+  .frame-bar .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--axis); display: block; }
+  .frame-bar .url { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; color: var(--muted); background: var(--plane); border-radius: 6px; padding: 3px 10px; }
+
+  /* beacon app chrome */
+  .app-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 22px; border-bottom: 1px solid var(--grid); }
+  .wordmark { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 15px; letter-spacing: 0.01em; }
+  .wordmark::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  .app-nav { font-size: 13px; color: var(--ink-2); }
+  .app-body { padding: 20px 22px 26px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* index screen */
+  .report-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    border: 1px solid var(--grid); border-radius: 10px; padding: 14px 16px;
+  }
+  .report-row .nm { font-weight: 650; font-size: 14.5px; }
+  .report-row .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .report-row .hl { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; }
+  .pill.ok { background: var(--good-soft); color: var(--good-text); }
+  .pill.fail { background: var(--crit-soft); color: var(--bad-text); }
+  .index-note { font-size: 12px; color: var(--muted); }
+
+  /* run meta strip */
+  .run-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-2); }
+  .run-meta .mono { font-size: 11.5px; }
+  .stagechip { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; color: var(--muted); border: 1px solid var(--grid); border-radius: 99px; padding: 2px 9px; }
+
+  /* report artifact */
+  .artifact { border-top: 1px solid var(--grid); padding-top: 18px; display: flex; flex-direction: column; gap: 18px; }
+  .rep-head h2 { margin: 0; font-size: 19px; font-weight: 650; letter-spacing: -0.005em; }
+  .rep-head .gen { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 720px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+  .tile { border: 1px solid var(--grid); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+  .tile .lbl { font-size: 12px; color: var(--ink-2); }
+  .tile .val { font-size: 26px; font-weight: 650; margin-top: 2px; letter-spacing: -0.01em; }
+  .tile .delta { font-size: 12px; margin-top: 2px; }
+  .delta.up-bad { color: var(--bad-text); }
+  .delta.under { color: var(--good-text); }
+  .delta .vs { color: var(--muted); }
+
+  .card { border: 1px solid var(--grid); border-radius: 10px; padding: 16px 18px 14px; background: var(--surface); }
+  .card h3 { margin: 0 0 2px; font-size: 14px; font-weight: 650; }
+  .card .sub { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
+
+  /* meter */
+  .meter-track { position: relative; height: 14px; border-radius: 99px; background: var(--series-track); overflow: visible; }
+  .meter-fill { position: absolute; inset: 0 auto 0 0; width: 9.3%; border-radius: 99px 0 0 99px; background: var(--series); }
+  .meter-proj { position: absolute; top: -4px; bottom: -4px; left: 96.1%; width: 2px; background: var(--ink-2); border-radius: 1px; }
+  .meter-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+  .meter-labels b { color: var(--ink); font-weight: 650; }
+  .proj-lab { text-align: right; }
+  .proj-lab .k { color: var(--muted); }
+
+  /* daily bars */
+  .plot { display: grid; grid-template-columns: 34px 1fr; gap: 0 8px; }
+  .yaxis { position: relative; height: 160px; }
+  .yaxis span { position: absolute; right: 0; transform: translateY(50%); font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .plot-area { position: relative; height: 160px; }
+  .gline { position: absolute; left: 0; right: 0; height: 1px; background: var(--grid); }
+  .gline.base { background: var(--axis); }
+  .bars { position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 3px; }
+  .day { position: relative; flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .day .bar { width: 100%; max-width: 13px; background: var(--series); border-radius: 4px 4px 0 0; }
+  .day:hover .bar { background: var(--series-hover); }
+  .day .tip {
+    display: none; position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--plane); font-size: 11px; padding: 3px 8px; border-radius: 6px; white-space: nowrap; z-index: 3;
+    font-variant-numeric: tabular-nums;
+  }
+  .day:hover .tip { display: block; }
+  .vlab { position: absolute; left: 50%; transform: translateX(-50%); font-size: 10.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .xaxis { display: flex; gap: 3px; margin-top: 6px; }
+  .xaxis span { flex: 1 1 0; text-align: center; font-size: 10px; color: var(--muted); white-space: nowrap; overflow: visible; }
+
+  /* breakdowns */
+  .breakdowns { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; }
+  @media (max-width: 720px) { .breakdowns { grid-template-columns: 1fr; } }
+  .hrow { display: grid; grid-template-columns: 92px 1fr 52px; align-items: center; gap: 10px; margin-top: 9px; }
+  .hrow .hlbl { font-size: 12.5px; color: var(--ink-2); text-align: right; }
+  .hrow .htrack { position: relative; height: 16px; }
+  .hrow .hbar { position: absolute; inset: 0 auto 0 0; background: var(--series); border-radius: 0 4px 4px 0; height: 16px; }
+  .hrow:hover .hbar { background: var(--series-hover); }
+  .hrow .hval { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+  details.tableview { border-top: 1px dashed var(--grid); padding-top: 10px; }
+  details.tableview summary { cursor: pointer; font-size: 12.5px; color: var(--ink-2); }
+  details.tableview summary:focus-visible { outline: 2px solid var(--series); outline-offset: 2px; border-radius: 4px; }
+  .dtable { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+  .dtable th { text-align: right; font-weight: 600; color: var(--muted); padding: 4px 8px; border-bottom: 1px solid var(--grid); }
+  .dtable th:first-child, .dtable td:first-child { text-align: left; }
+  .dtable td { padding: 4px 8px; border-bottom: 1px solid var(--grid); text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+  .fineprint { font-size: 11.5px; color: var(--muted); }
+
+  footer.page-foot { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--grid); padding-top: 16px; }
+  footer.page-foot b { color: var(--ink-2); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header class="page-head">
+    <div class="eyebrow">wkx-beacon &middot; viewer mockup &middot; design session</div>
+    <h1>What the viewer looks like</h1>
+    <p class="lede">Two screens: the index at <span class="mono">/</span> and a run permalink for <span class="mono">platform-cost</span>. Beacon amber is chrome only; chart marks use a validated single-hue palette. Hover the daily bars for tooltips.</p>
+  </header>
+
+  <div>
+    <p class="screen-label">Screen 1 <span class="mono">GET /</span></p>
+    <div class="frame">
+      <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">beacon.wingkongexchange.dev</span></div>
+      <div class="app-head">
+        <span class="wordmark">beacon</span>
+        <nav class="app-nav">reports</nav>
+      </div>
+      <div class="app-body">
+        <div class="report-row">
+          <div>
+            <div class="nm">platform-cost</div>
+            <div class="sub">daily &middot; 07:00 Pacific/Auckland &middot; aws-cost &rarr; html &rarr; email-ses</div>
+          </div>
+          <div class="hl">NZD 4.65 month-to-date &middot; projected 48.05 of 50.00</div>
+          <span class="pill ok">ok &middot; 07:00 today</span>
+        </div>
+        <div class="report-row" style="opacity:.65">
+          <div>
+            <div class="nm">platform-errors</div>
+            <div class="sub">future report, same seams &middot; shown for the failure state</div>
+          </div>
+          <div class="hl">CollectError: log group not found</div>
+          <span class="pill fail">failed &middot; 07:05 today</span>
+        </div>
+        <div class="index-note">1 report configured &middot; runs are read-only here; scheduling lives in beacon.toml</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <p class="screen-label">Screen 2 <span class="mono">GET /reports/platform-cost/runs/2026-07-04T07-00Z</span></p>
+    <div class="frame">
+      <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">beacon.wingkongexchange.dev/reports/platform-cost/runs/2026-07-04T07-00Z</span></div>
+      <div class="app-head">
+        <span class="wordmark">beacon</span>
+        <nav class="app-nav">reports / platform-cost</nav>
+      </div>
+      <div class="app-body">
+        <div class="run-meta">
+          <span class="pill ok">ok</span>
+          <span class="mono">2026-07-04T07-00Z</span>
+          <span class="stagechip">collect 2.4s</span>
+          <span class="stagechip">render 0.3s</span>
+          <span class="stagechip">store 12ms</span>
+          <span class="stagechip">notify 0.9s</span>
+        </div>
+
+        <div class="artifact">
+          <div class="rep-head">
+            <h2>Platform cost &middot; July 2026</h2>
+            <div class="gen">Generated 07:00 NZST, 4 July 2026 &middot; WKX Platform member account &middot; grouped by cost-allocation tags</div>
+          </div>
+
+          <div class="tiles">
+            <div class="tile">
+              <div class="lbl">Month-to-date</div>
+              <div class="val">$4.65</div>
+              <div class="delta"><span class="vs">NZD &middot; USD 2.84 &middot; 3 complete days</span></div>
+            </div>
+            <div class="tile">
+              <div class="lbl">Projected month-end</div>
+              <div class="val">$48.05</div>
+              <div class="delta under">&#9660; $1.95 under budget</div>
+            </div>
+            <div class="tile">
+              <div class="lbl">Yesterday</div>
+              <div class="val">$1.58</div>
+              <div class="delta up-bad">&#9650; $0.03 <span class="vs">vs 2 Jul</span></div>
+            </div>
+            <div class="tile">
+              <div class="lbl">Budget</div>
+              <div class="val">$50.00</div>
+              <div class="delta"><span class="vs">NZD / month &middot; USD 30.49</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Budget position</h3>
+            <p class="sub">Fill is month-to-date; the tick is the projected month-end.</p>
+            <div class="meter-track">
+              <div class="meter-fill"></div>
+              <div class="meter-proj"></div>
+            </div>
+            <div class="meter-labels">
+              <span><b>$4.65</b> spent</span>
+              <span class="proj-lab"><b>$48.05</b> projected <span class="k">&middot; $50.00 budget</span></span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Daily spend</h3>
+            <p class="sub">Last 30 days, NZD. 21 June spike: ECR storage from an untagged test image.</p>
+            <div class="plot">
+              <div class="yaxis">
+                <span style="bottom:160px">$3</span>
+                <span style="bottom:106.7px">$2</span>
+                <span style="bottom:53.3px">$1</span>
+                <span style="bottom:0">$0</span>
+              </div>
+              <div class="plot-area">
+                <div class="gline" style="bottom:160px"></div>
+                <div class="gline" style="bottom:106.7px"></div>
+                <div class="gline" style="bottom:53.3px"></div>
+                <div class="gline base" style="bottom:0"></div>
+                <div class="bars">
+                  <div class="day"><span class="tip">5 Jun &middot; $1.52</span><div class="bar" style="height:81px"></div></div>
+                  <div class="day"><span class="tip">6 Jun &middot; $1.49</span><div class="bar" style="height:79px"></div></div>
+                  <div class="day"><span class="tip">7 Jun &middot; $1.55</span><div class="bar" style="height:83px"></div></div>
+                  <div class="day"><span class="tip">8 Jun &middot; $1.51</span><div class="bar" style="height:81px"></div></div>
+                  <div class="day"><span class="tip">9 Jun &middot; $1.58</span><div class="bar" style="height:84px"></div></div>
+                  <div class="day"><span class="tip">10 Jun &middot; $1.53</span><div class="bar" style="height:82px"></div></div>
+                  <div class="day"><span class="tip">11 Jun &middot; $1.50</span><div class="bar" style="height:80px"></div></div>
+                  <div class="day"><span class="tip">12 Jun &middot; $1.61</span><div class="bar" style="height:86px"></div></div>
+                  <div class="day"><span class="tip">13 Jun &middot; $1.55</span><div class="bar" style="height:83px"></div></div>
+                  <div class="day"><span class="tip">14 Jun &middot; $1.52</span><div class="bar" style="height:81px"></div></div>
+                  <div class="day"><span class="tip">15 Jun &middot; $1.57</span><div class="bar" style="height:84px"></div></div>
+                  <div class="day"><span class="tip">16 Jun &middot; $1.54</span><div class="bar" style="height:82px"></div></div>
+                  <div class="day"><span class="tip">17 Jun &middot; $1.60</span><div class="bar" style="height:85px"></div></div>
+                  <div class="day"><span class="tip">18 Jun &middot; $1.51</span><div class="bar" style="height:81px"></div></div>
+                  <div class="day"><span class="tip">19 Jun &middot; $1.56</span><div class="bar" style="height:83px"></div></div>
+                  <div class="day"><span class="tip">20 Jun &middot; $1.53</span><div class="bar" style="height:82px"></div></div>
+                  <div class="day"><span class="vlab" style="bottom:159px">$2.90</span><span class="tip">21 Jun &middot; $2.90</span><div class="bar" style="height:155px"></div></div>
+                  <div class="day"><span class="tip">22 Jun &middot; $1.66</span><div class="bar" style="height:89px"></div></div>
+                  <div class="day"><span class="tip">23 Jun &middot; $1.58</span><div class="bar" style="height:84px"></div></div>
+                  <div class="day"><span class="tip">24 Jun &middot; $1.54</span><div class="bar" style="height:82px"></div></div>
+                  <div class="day"><span class="tip">25 Jun &middot; $1.57</span><div class="bar" style="height:84px"></div></div>
+                  <div class="day"><span class="tip">26 Jun &middot; $1.52</span><div class="bar" style="height:81px"></div></div>
+                  <div class="day"><span class="tip">27 Jun &middot; $1.55</span><div class="bar" style="height:83px"></div></div>
+                  <div class="day"><span class="tip">28 Jun &middot; $1.59</span><div class="bar" style="height:85px"></div></div>
+                  <div class="day"><span class="tip">29 Jun &middot; $1.54</span><div class="bar" style="height:82px"></div></div>
+                  <div class="day"><span class="tip">30 Jun &middot; $1.56</span><div class="bar" style="height:83px"></div></div>
+                  <div class="day"><span class="tip">1 Jul &middot; $1.52</span><div class="bar" style="height:81px"></div></div>
+                  <div class="day"><span class="tip">2 Jul &middot; $1.55</span><div class="bar" style="height:83px"></div></div>
+                  <div class="day"><span class="vlab" style="bottom:88px">$1.58</span><span class="tip">3 Jul &middot; $1.58</span><div class="bar" style="height:84px"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="xaxis" style="margin-left:42px">
+              <span>5 Jun</span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span>12 Jun</span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span>19 Jun</span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span>26 Jun</span><span></span><span></span><span></span><span></span><span></span><span></span>
+              <span>3 Jul</span>
+            </div>
+          </div>
+
+          <div class="breakdowns">
+            <div class="card">
+              <h3>By service</h3>
+              <p class="sub">Month-to-date, via the Service cost-allocation tag.</p>
+              <div class="hrow"><span class="hlbl">host (EC2)</span><span class="htrack"><span class="hbar" style="width:100%"></span></span><span class="hval">$2.96</span></div>
+              <div class="hrow"><span class="hlbl">storage (EBS)</span><span class="htrack"><span class="hbar" style="width:29%"></span></span><span class="hval">$0.86</span></div>
+              <div class="hrow"><span class="hlbl">network</span><span class="htrack"><span class="hbar" style="width:14.2%"></span></span><span class="hval">$0.42</span></div>
+              <div class="hrow"><span class="hlbl">ECR</span><span class="htrack"><span class="hbar" style="width:7.1%"></span></span><span class="hval">$0.21</span></div>
+              <div class="hrow"><span class="hlbl">other</span><span class="htrack"><span class="hbar" style="width:6.8%"></span></span><span class="hval">$0.20</span></div>
+            </div>
+            <div class="card">
+              <h3>By env</h3>
+              <p class="sub">Month-to-date, via the Env tag.</p>
+              <div class="hrow"><span class="hlbl">prod</span><span class="htrack"><span class="hbar" style="width:100%"></span></span><span class="hval">$4.28</span></div>
+              <div class="hrow"><span class="hlbl">untagged</span><span class="htrack"><span class="hbar" style="width:8.6%"></span></span><span class="hval">$0.37</span></div>
+            </div>
+          </div>
+
+          <details class="tableview">
+            <summary>Daily spend as a table</summary>
+            <table class="dtable">
+              <tr><th>Day</th><th>NZD</th><th>Day</th><th>NZD</th><th>Day</th><th>NZD</th></tr>
+              <tr><td>5 Jun</td><td>1.52</td><td>15 Jun</td><td>1.57</td><td>25 Jun</td><td>1.57</td></tr>
+              <tr><td>6 Jun</td><td>1.49</td><td>16 Jun</td><td>1.54</td><td>26 Jun</td><td>1.52</td></tr>
+              <tr><td>7 Jun</td><td>1.55</td><td>17 Jun</td><td>1.60</td><td>27 Jun</td><td>1.55</td></tr>
+              <tr><td>8 Jun</td><td>1.51</td><td>18 Jun</td><td>1.51</td><td>28 Jun</td><td>1.59</td></tr>
+              <tr><td>9 Jun</td><td>1.58</td><td>19 Jun</td><td>1.56</td><td>29 Jun</td><td>1.54</td></tr>
+              <tr><td>10 Jun</td><td>1.53</td><td>20 Jun</td><td>1.53</td><td>30 Jun</td><td>1.56</td></tr>
+              <tr><td>11 Jun</td><td>1.50</td><td>21 Jun</td><td>2.90</td><td>1 Jul</td><td>1.52</td></tr>
+              <tr><td>12 Jun</td><td>1.61</td><td>22 Jun</td><td>1.66</td><td>2 Jul</td><td>1.55</td></tr>
+              <tr><td>13 Jun</td><td>1.55</td><td>23 Jun</td><td>1.58</td><td>3 Jul</td><td>1.58</td></tr>
+              <tr><td>14 Jun</td><td>1.52</td><td>24 Jun</td><td>1.54</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+            </table>
+          </details>
+
+          <p class="fineprint">Source: AWS Cost Explorer, unblended cost, USD. Display configured as local-first: NZD at a configured static rate of 1.64 NZD/USD (default display is USD only). Billing days are UTC; date labels show the Pacific/Auckland date covering most of each billing day (default labels are UTC). No account identifiers are rendered; this page is public. Artefact is self-contained HTML.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="page-foot">
+    <b>Mock notes:</b> single data series, so no legend; direct labels only on the spike and the endpoint, tooltips and the table carry the rest. Bars max 13px with 4px rounded data-ends, square at the baseline. Chart palette is the validated reference set (series blue, reserved status colours); beacon amber never colours data. The real artifact is rendered by the html renderer's cost template pack at generation time.
+  </footer>
+</div>

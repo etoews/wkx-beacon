@@ -1,0 +1,927 @@
+<title>wkx-beacon architecture</title>
+<style>
+  :root {
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --ink: #23262C;
+    --muted: #6B7076;
+    --line: #DDDAD3;
+    --boundary: #C9C4BA;
+    --amber: #B97A0A;
+    --amber-ink: #8A5B06;
+    --amber-soft: #F6E9CE;
+    --teal: #157A6C;
+    --teal-soft: #DCEEEA;
+    --indigo: #4B5AA8;
+    --indigo-soft: #E1E6F6;
+    --code-bg: #F0EEE8;
+    --fail: #B3423A;
+    --fail-soft: #F6DEDC;
+    --shadow: 0 1px 2px rgba(35, 38, 44, 0.06), 0 4px 14px rgba(35, 38, 44, 0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15181D;
+      --surface: #1D2127;
+      --ink: #E9E7E2;
+      --muted: #9AA0A8;
+      --line: #333944;
+      --boundary: #454D59;
+      --amber: #E3A93F;
+      --amber-ink: #EDBE66;
+      --amber-soft: #33291454;
+      --teal: #4CC2B0;
+      --teal-soft: #10322d80;
+      --indigo: #93A3E8;
+      --indigo-soft: #23294d80;
+      --code-bg: #171A20;
+      --fail: #E07B72;
+      --fail-soft: #3a1e1c80;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F7F6F3;
+    --surface: #FFFFFF;
+    --ink: #23262C;
+    --muted: #6B7076;
+    --line: #DDDAD3;
+    --boundary: #C9C4BA;
+    --amber: #B97A0A;
+    --amber-ink: #8A5B06;
+    --amber-soft: #F6E9CE;
+    --teal: #157A6C;
+    --teal-soft: #DCEEEA;
+    --indigo: #4B5AA8;
+    --indigo-soft: #E1E6F6;
+    --code-bg: #F0EEE8;
+    --fail: #B3423A;
+    --fail-soft: #F6DEDC;
+    --shadow: 0 1px 2px rgba(35, 38, 44, 0.06), 0 4px 14px rgba(35, 38, 44, 0.05);
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181D;
+    --surface: #1D2127;
+    --ink: #E9E7E2;
+    --muted: #9AA0A8;
+    --line: #333944;
+    --boundary: #454D59;
+    --amber: #E3A93F;
+    --amber-ink: #EDBE66;
+    --amber-soft: #33291454;
+    --teal: #4CC2B0;
+    --teal-soft: #10322d80;
+    --indigo: #93A3E8;
+    --indigo-soft: #23294d80;
+    --code-bg: #171A20;
+    --fail: #E07B72;
+    --fail-soft: #3a1e1c80;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Avenir Next", "Seravek", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace; }
+
+  .page {
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 48px 24px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+  }
+
+  /* ---------- header ---------- */
+  header { display: flex; flex-direction: column; gap: 10px; }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 0 4px var(--amber-soft);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 4.5vw, 40px);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  .lede { max-width: 62ch; color: var(--muted); margin: 0; font-size: 16.5px; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 18px; }
+  h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  h2 .sec-note {
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    font-size: 13.5px;
+  }
+  .scroller { overflow-x: auto; padding: 4px; margin: -4px; }
+
+  /* ---------- generic node ---------- */
+  .node {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: var(--shadow);
+    min-width: 118px;
+  }
+  .node .t { font-weight: 600; font-size: 14.5px; }
+  .node .d { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .node.ext { background: transparent; box-shadow: none; border-style: dashed; border-color: var(--boundary); }
+  .node.hero { border-color: var(--amber); border-width: 1.5px; }
+  .node.hero .t { color: var(--amber-ink); }
+
+  /* ---------- context flow row ---------- */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: max-content;
+    padding: 6px 2px;
+  }
+  .arrow { flex: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .arrow svg { display: block; }
+  .arrow .lbl {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .context-side {
+    display: flex;
+    gap: 14px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .side-card {
+    flex: 1 1 260px;
+    border: 1px dashed var(--boundary);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .side-card b { color: var(--ink); font-weight: 600; display: block; font-size: 13.5px; }
+  .side-card .mono { font-size: 12px; }
+
+  /* ---------- container diagram ---------- */
+  .container-box {
+    border: 1.5px solid var(--amber);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: linear-gradient(0deg, transparent, transparent);
+    min-width: 700px;
+  }
+  .container-label {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber-ink);
+    margin-bottom: 14px;
+  }
+  .core-row { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 14px; }
+  .core {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow);
+  }
+  .core .t { font-weight: 600; font-size: 15px; }
+  .core .d { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .core .d .mono { font-size: 11.5px; }
+  .pipe-stages {
+    display: flex;
+    gap: 6px;
+    margin-top: 9px;
+    flex-wrap: wrap;
+  }
+  .stage {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .api-bar-wrap { display: flex; flex-direction: column; align-items: stretch; }
+  .down-link {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+  }
+  .down-link::before, .down-link::after {
+    content: "";
+    width: 1px;
+    height: 14px;
+    background: var(--boundary);
+  }
+  .api-bar {
+    border: 1px solid var(--amber);
+    background: var(--amber-soft);
+    color: var(--amber-ink);
+    border-radius: 8px;
+    text-align: center;
+    padding: 8px 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .api-bar span { font-weight: 400; opacity: 0.85; }
+
+  .plugin-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .pgroup {
+    border-radius: 10px;
+    padding: 12px 14px 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    border-top: 3px solid var(--line);
+  }
+  .pgroup.collectors { border-top-color: var(--teal); }
+  .pgroup.renderers  { border-top-color: var(--indigo); }
+  .pgroup.notifiers  { border-top-color: var(--amber); }
+  .pgroup .g {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pgroup.collectors .g { color: var(--teal); }
+  .pgroup.renderers  .g { color: var(--indigo); }
+  .pgroup.notifiers  .g { color: var(--amber-ink); }
+  .pgroup .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .chip.built { font-weight: 600; }
+  .collectors .chip.built { background: var(--teal-soft); border-color: var(--teal); color: var(--teal); }
+  .renderers  .chip.built { background: var(--indigo-soft); border-color: var(--indigo); color: var(--indigo); }
+  .notifiers  .chip.built { background: var(--amber-soft); border-color: var(--amber); color: var(--amber-ink); }
+  .chip.future { border-style: dashed; border-color: var(--boundary); color: var(--muted); }
+
+  .third-party {
+    margin-top: 2px;
+    border: 1px dashed var(--boundary);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .third-party .mono { font-size: 11.5px; }
+
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 22px; height: 12px; border-radius: 99px; border: 1px solid var(--line); }
+  .swatch.solid { background: var(--amber-soft); border-color: var(--amber); }
+  .swatch.dashed { border-style: dashed; border-color: var(--boundary); }
+
+  /* ---------- contracts ---------- */
+  .contracts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .contracts { grid-template-columns: 1fr; } .core-row, .plugin-row { grid-template-columns: 1fr; } .container-box { min-width: 0; } }
+  .contract {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .contract .kind { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .kdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .contract.c-col .kdot { background: var(--teal); }
+  .contract.c-ren .kdot { background: var(--indigo); }
+  .contract.c-not .kdot { background: var(--amber); }
+  .contract .ep {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--muted);
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: 3px 8px;
+    width: max-content;
+    max-width: 100%;
+  }
+  .contract ul { margin: 2px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 5px; }
+  .contract li b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- run sequence ---------- */
+  .run { display: flex; align-items: stretch; gap: 0; min-width: max-content; padding: 6px 2px; }
+  .step { display: flex; align-items: center; }
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 10px 13px;
+    width: 168px;
+  }
+  .step-card .n {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--amber-ink);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .step-card .t { font-weight: 600; font-size: 13.5px; margin-top: 2px; }
+  .step-card .d { font-size: 11.8px; color: var(--muted); margin-top: 2px; }
+  .step-card .d .mono { font-size: 11px; }
+
+  /* ---------- runtime ---------- */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+  .rt-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .rt-card h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  .rt-card p { margin: 0; font-size: 13px; color: var(--muted); }
+  .rt-card p b { color: var(--ink); font-weight: 600; }
+  .rt-card .mono { font-size: 12px; }
+
+  .timeline { display: flex; align-items: flex-start; margin-top: 4px; min-width: max-content; }
+  .tl-node { display: flex; flex-direction: column; gap: 7px; width: 128px; flex: none; }
+  .tl-track { display: flex; align-items: center; height: 13px; }
+  .tl-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--amber); flex: none; }
+  .tl-dot.miss { background: transparent; border: 2px solid var(--fail); }
+  .tl-line { height: 2px; background: var(--line); flex: 1; margin: 0 4px; }
+  .tl-node:last-child .tl-line { display: none; }
+  .tl-when { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; color: var(--amber-ink); font-weight: 600; letter-spacing: 0.06em; }
+  .tl-node.missn .tl-when { color: var(--fail); }
+  .tl-what { font-size: 12px; color: var(--muted); line-height: 1.4; padding-right: 14px; }
+  .tl-what b { color: var(--ink); font-weight: 600; }
+
+  .fail-stages { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .fail-branch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--fail);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+  }
+  .fail-branch::before { content: ""; width: 14px; height: 14px; border-left: 2px solid var(--fail); border-bottom: 2px solid var(--fail); border-radius: 0 0 0 6px; margin-left: 14px; flex: none; }
+  .failed-run {
+    border: 1px solid var(--fail);
+    background: var(--fail-soft);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .failed-run b { font-weight: 600; }
+  .failed-run .d { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+  .health-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .hchip {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    border: 1px solid var(--line);
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: 4px 10px;
+    color: var(--ink);
+  }
+
+  /* ---------- viewer ---------- */
+  .routes { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .routes td { padding: 7px 10px; border-top: 1px solid var(--line); vertical-align: top; }
+  .routes tr:first-child td { border-top: none; }
+  .routes .r { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; white-space: nowrap; color: var(--indigo); }
+  .routes .p { color: var(--muted); }
+  .routes .p b { color: var(--ink); font-weight: 600; }
+
+  .mock {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .mock-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--code-bg);
+  }
+  .mock-bar .dots { display: flex; gap: 4px; }
+  .mock-bar .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--boundary); display: block; }
+  .mock-bar .url { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; color: var(--muted); }
+  .mock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--line);
+    font-size: 12.5px;
+    flex-wrap: wrap;
+  }
+  .mock-row:first-of-type { border-top: none; }
+  .mock-row .nm { font-weight: 600; }
+  .mock-row .hl { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .pill {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 9px;
+    border-radius: 99px;
+  }
+  .pill.ok { background: var(--teal-soft); color: var(--teal); }
+  .pill.fail { background: var(--fail-soft); color: var(--fail); }
+  .mock-note { padding: 8px 14px; font-size: 11px; color: var(--muted); border-top: 1px dashed var(--line); }
+
+  /* ---------- config ---------- */
+  pre {
+    margin: 0;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+    font-size: 12.8px;
+    line-height: 1.6;
+  }
+  pre .c { color: var(--muted); }
+  pre .k { color: var(--indigo); }
+  pre .s { color: var(--teal); }
+  pre .h { color: var(--amber-ink); font-weight: 600; }
+
+  .callout {
+    border-left: 3px solid var(--amber);
+    background: var(--amber-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .callout b { font-weight: 600; }
+
+  footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 18px; }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">wkx-beacon &middot; design session &middot; 2026-07-04</div>
+    <h1>A plugin framework with three seams</h1>
+    <p class="lede">
+      Beacon is <strong>one container, one process</strong>: a scheduler fires report pipelines and an
+      htmx web viewer serves the results. Everything platform-specific, format-specific, or
+      channel-specific lives behind a plugin seam: <strong>collectors</strong> gather,
+      <strong>renderers</strong> shape, <strong>notifiers</strong> announce.
+    </p>
+  </header>
+
+  <section>
+    <h2>Where it sits <span class="sec-note">a standard wkx app on the WKX Platform</span></h2>
+    <div class="scroller">
+      <div class="flow">
+        <div class="node ext"><div class="t">Your browser</div><div class="d">public, no authn for now</div></div>
+        <div class="arrow">
+          <svg width="46" height="14" viewBox="0 0 46 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h38m-6-5 6 5-6 5"/></svg>
+          <span class="lbl">https</span>
+        </div>
+        <div class="node ext"><div class="t">Cloudflare</div><div class="d">DNS &middot; WAF &middot; DDoS</div></div>
+        <div class="arrow">
+          <svg width="46" height="14" viewBox="0 0 46 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h38m-6-5 6 5-6 5"/></svg>
+          <span class="lbl">443 only</span>
+        </div>
+        <div class="node ext"><div class="t">Caddy</div><div class="d">TLS &middot; routing on the host</div></div>
+        <div class="arrow">
+          <svg width="46" height="14" viewBox="0 0 46 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h38m-6-5 6 5-6 5"/></svg>
+          <span class="lbl mono">beacon.snippet</span>
+        </div>
+        <div class="node hero"><div class="t">beacon container</div><div class="d mono">beacon.wingkongexchange.dev</div></div>
+      </div>
+    </div>
+    <div class="context-side">
+      <div class="side-card"><b>AWS APIs, outbound</b> Cost Explorer (<span class="mono">ce:GetCostAndUsage</span>) and SES (<span class="mono">ses:SendEmail</span>). Credentials via the default SDK chain; provisioning is a platform decision, not beacon's.</div>
+      <div class="side-card"><b>Data dir on EBS</b> <span class="mono">/srv/data/beacon/&lt;env&gt;</span> mounted into the container. Artifacts and run records live here; the store is the only state.</div>
+      <div class="side-card"><b>Logs to stdout</b> JSON via stdlib logging, picked up by the platform's CloudWatch agent under <span class="mono">/wkx/beacon/&lt;env&gt;</span>.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Inside the container <span class="sec-note">core orchestrates, plugins do the work</span></h2>
+    <div class="scroller">
+      <div class="container-box">
+        <div class="container-label">beacon container &middot; one process &middot; arm64</div>
+        <div class="core-row">
+          <div class="core">
+            <div class="t">Scheduler</div>
+            <div class="d">APScheduler. One cron trigger per configured report, timezone-aware.</div>
+          </div>
+          <div class="core">
+            <div class="t">Report pipeline</div>
+            <div class="d">Runs a report end to end, records the run either way.</div>
+            <div class="pipe-stages">
+              <span class="stage">collect</span><span class="stage">render</span><span class="stage">store</span><span class="stage">notify</span>
+            </div>
+          </div>
+          <div class="core">
+            <div class="t">Web viewer</div>
+            <div class="d">FastAPI + Jinja2 + <span class="mono">htmx</span>. Index, history, report pages. Read-only over the store.</div>
+          </div>
+        </div>
+
+        <div class="api-bar-wrap">
+          <div class="down-link">discovers at boot via importlib.metadata &middot; validates config &middot; fails fast</div>
+          <div class="api-bar">wkx_beacon.plugin <span>&middot; public API surface, semver</span></div>
+          <div class="down-link">entry points</div>
+        </div>
+
+        <div class="plugin-row">
+          <div class="pgroup collectors">
+            <div class="g">wkx_beacon.collectors</div>
+            <div class="chips">
+              <span class="chip built">aws-cost</span>
+              <span class="chip future">azure-cost</span>
+              <span class="chip future">compose-usage</span>
+              <span class="chip future">aws-error</span>
+            </div>
+          </div>
+          <div class="pgroup renderers">
+            <div class="g">wkx_beacon.renderers</div>
+            <div class="chips">
+              <span class="chip built">html</span>
+              <span class="chip future">json</span>
+              <span class="chip future">markdown</span>
+            </div>
+          </div>
+          <div class="pgroup notifiers">
+            <div class="g">wkx_beacon.notifiers</div>
+            <div class="chips">
+              <span class="chip built">email-ses</span>
+              <span class="chip future">smtp</span>
+              <span class="chip future">ms-teams</span>
+              <span class="chip future">discord</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="third-party">
+      Any pip-installed package can register in these groups: <span class="mono">wkx-beacon-azure</span> ships collectors and templates without touching core. Built-ins register the same way, so the third-party path is exercised from day one.
+    </div>
+    <div class="legend">
+      <span><span class="swatch solid"></span> built-in, ships in the MVP</span>
+      <span><span class="swatch dashed"></span> future plugin, same seam</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>The three contracts</h2>
+    <div class="contracts">
+      <div class="contract c-col">
+        <div class="kind"><span class="kdot"></span>Collector</div>
+        <div class="ep">wkx_beacon.collectors</div>
+        <ul>
+          <li>Declares its <b>report type</b> and <b>platform</b>, e.g. cost &times; aws.</li>
+          <li>Returns a typed <b>ReportData</b> model it owns; the data contract for that report type.</li>
+          <li>Contributes a <b>template pack</b> so the html renderer can shape its report type.</li>
+        </ul>
+      </div>
+      <div class="contract c-ren">
+        <div class="kind"><span class="kdot"></span>Renderer</div>
+        <div class="ep">wkx_beacon.renderers</div>
+        <ul>
+          <li>Turns <b>ReportData</b> into one or more <b>artifacts</b> (an HTML page now).</li>
+          <li><b>html</b> dispatches on report type to the contributed template pack.</li>
+          <li>Generic renderers (a future <b>json</b>) serialise any report type.</li>
+        </ul>
+      </div>
+      <div class="contract c-not">
+        <div class="kind"><span class="kdot"></span>Notifier</div>
+        <div class="ep">wkx_beacon.notifiers</div>
+        <ul>
+          <li>Receives a <b>run summary</b>: report name, headline figures, artifact link.</li>
+          <li>Delivers it on a channel; <b>email-ses</b> first.</li>
+          <li>Never sees raw platform data.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The MVP plugins <span class="sec-note">one of each, exercising every seam</span></h2>
+    <div class="contracts">
+      <div class="contract c-col">
+        <div class="kind"><span class="kdot"></span>aws-cost</div>
+        <div class="ep">collector &middot; cost &times; aws</div>
+        <ul>
+          <li><b>One AWS Cost Explorer call per run</b>: daily granularity, unblended cost, current month plus previous 30 days, grouped by the <b>Service</b> and <b>Env</b> cost-allocation tags (two group-bys per call; totals derived by summing).</li>
+          <li>Computes month-to-date, yesterday, per-tag breakdowns, untagged share, and <b>projected month-end</b> (average of complete days, extrapolated; no forecast API).</li>
+          <li>About USD 0.30/month in Cost Explorer request charges at one call per day.</li>
+          <li>Returns <b>CostReportData</b>; config: budget, currencies, group-by tag keys.</li>
+        </ul>
+      </div>
+      <div class="contract c-ren">
+        <div class="kind"><span class="kdot"></span>html</div>
+        <div class="ep">renderer</div>
+        <ul>
+          <li>Renders the collector's <b>template pack</b> into a fully <b>self-contained artifact</b>: inline CSS, inline SVG/HTML charts, CSS-only tooltips.</li>
+          <li>No JavaScript, no external assets; identical from the store, the viewer, or a saved file.</li>
+          <li>Renders no account identifiers; the page is public.</li>
+        </ul>
+      </div>
+      <div class="contract c-not">
+        <div class="kind"><span class="kdot"></span>email-ses</div>
+        <div class="ep">notifier &middot; Amazon SES v2</div>
+        <ul>
+          <li>Success: subject carries the headline (<b>$4.65 MTD, projected $48.05 of $50.00</b>), body is the summary plus the stable <b>/latest</b> link.</li>
+          <li>Failure: subject names the failed stage.</li>
+          <li>Sender <b>beacon@wingkongexchange.dev</b>; the SES domain identity and its Cloudflare DNS records are a <b>platform prerequisite</b> (Terraform in wkx-platform), alongside beacon's IAM permissions.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="third-party">
+      <b>Source of truth is fixed; display is per-report config.</b> Two knobs, same pattern.<br/>
+      <b>Currency:</b> AWS Cost Explorer only returns USD. <span class="mono">display = "usd"</span> (default) reports purely in USD; <span class="mono">display = "local-first"</span> shows local-currency figures first with USD alongside, converted at a configured static rate shown in the report fine print. This deployment: NZD first at 1.64 NZD/USD.<br/>
+      <b>Days:</b> billing data is always UTC days and UTC months (the invoice's frame; projections and budget maths use complete UTC days). <span class="mono">day_display = "utc"</span> (default) labels dates as UTC; <span class="mono">day_display = "local-first"</span> labels each UTC billing day with the local date covering most of it (UTC 3 Jul &rarr; "4 Jul" in NZ), with both dates in tooltips and the table, and the mapping stated in the fine print. The morning-of-the-1st report wraps up the previous billing month by design. This deployment: local-first, Pacific/Auckland.
+    </div>
+  </section>
+
+  <section>
+    <h2>One run <span class="sec-note">platform-cost, daily at 07:00 Pacific/Auckland</span></h2>
+    <div class="scroller">
+      <div class="run">
+        <div class="step">
+          <div class="step-card">
+            <div class="n">01 &middot; fire</div>
+            <div class="t">Cron triggers</div>
+            <div class="d">Scheduler starts the <span class="mono">platform-cost</span> pipeline.</div>
+          </div>
+          <div class="arrow"><svg width="30" height="14" viewBox="0 0 30 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h22m-6-5 6 5-6 5"/></svg></div>
+        </div>
+        <div class="step">
+          <div class="step-card">
+            <div class="n">02 &middot; collect</div>
+            <div class="t">aws-cost queries CE</div>
+            <div class="d">Month-to-date + daily spend, grouped by <span class="mono">Project/Env/Service</span> tags.</div>
+          </div>
+          <div class="arrow"><svg width="30" height="14" viewBox="0 0 30 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h22m-6-5 6 5-6 5"/></svg></div>
+        </div>
+        <div class="step">
+          <div class="step-card">
+            <div class="n">03 &middot; render</div>
+            <div class="t">html renderer</div>
+            <div class="d">Cost template pack shapes <span class="mono">CostReportData</span> vs the NZD $50 budget.</div>
+          </div>
+          <div class="arrow"><svg width="30" height="14" viewBox="0 0 30 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h22m-6-5 6 5-6 5"/></svg></div>
+        </div>
+        <div class="step">
+          <div class="step-card">
+            <div class="n">04 &middot; store</div>
+            <div class="t">Run recorded</div>
+            <div class="d">Artifact + run record under <span class="mono">/srv/data/beacon/&lt;env&gt;</span>.</div>
+          </div>
+          <div class="arrow"><svg width="30" height="14" viewBox="0 0 30 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h22m-6-5 6 5-6 5"/></svg></div>
+        </div>
+        <div class="step">
+          <div class="step-card">
+            <div class="n">05 &middot; notify</div>
+            <div class="t">email-ses sends</div>
+            <div class="d">Headline figures + link, via SES.</div>
+          </div>
+          <div class="arrow"><svg width="30" height="14" viewBox="0 0 30 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 7h22m-6-5 6 5-6 5"/></svg></div>
+        </div>
+        <div class="step">
+          <div class="step-card">
+            <div class="n">06 &middot; view</div>
+            <div class="t">You click through</div>
+            <div class="d">htmx viewer serves the report and its history from the store.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Runtime <span class="sec-note">scheduler, failure model, store, health</span></h2>
+    <div class="two-col">
+      <div class="rt-card">
+        <h3>Scheduler with opt-in boot catch-up</h3>
+        <p>APScheduler in the FastAPI process, one timezone-aware cron trigger per report, <span class="mono">max_instances=1</span> so a slow run never stacks on itself. Boot catch-up is per-report config (<span class="mono">catch_up = true</span>), <b>default off</b>. When enabled: on boot, a report whose last successful run predates its previous scheduled fire time runs immediately. When off, a missed fire stays missed until the next cron.</p>
+        <div class="scroller">
+          <div class="timeline">
+            <div class="tl-node missn">
+              <div class="tl-track"><span class="tl-dot miss"></span><span class="tl-line"></span></div>
+              <span class="tl-when">07:00 &middot; DUE</span>
+              <div class="tl-what"><b>Host down.</b> Cron fires into the void.</div>
+            </div>
+            <div class="tl-node">
+              <div class="tl-track"><span class="tl-dot"></span><span class="tl-line"></span></div>
+              <span class="tl-when">09:12 &middot; BOOT</span>
+              <div class="tl-what"><b>Beacon starts.</b> Last success &lt; previous fire time.</div>
+            </div>
+            <div class="tl-node">
+              <div class="tl-track"><span class="tl-dot"></span><span class="tl-line"></span></div>
+              <span class="tl-when">09:12 &middot; CATCH-UP</span>
+              <div class="tl-what"><b>Only if <span class="mono">catch_up = true</span>.</b> Report lands late, not never.</div>
+            </div>
+            <div class="tl-node">
+              <div class="tl-track"><span class="tl-dot"></span><span class="tl-line"></span></div>
+              <span class="tl-when">07:00 +1d</span>
+              <div class="tl-what"><b>Normal cadence</b> resumes.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="rt-card">
+        <h3>A failed run is still a run</h3>
+        <p>Stages run in order; third-party exceptions are translated at the boundary into a <span class="mono">BeaconError</span> hierarchy. Within a run, boto3's standard retry mode absorbs transient blips; there is no retry queue, the next cron is tomorrow.</p>
+        <div class="fail-stages">
+          <span class="stage">collect</span><span class="stage">render</span><span class="stage">store</span><span class="stage">notify</span>
+        </div>
+        <div class="fail-branch">any stage raises &middot; CollectError / RenderError / NotifyError</div>
+        <div class="failed-run">
+          <b>Recorded, visible, announced.</b>
+          <div class="d">The run lands in the store with status and error summary, shows in the viewer, and notifiers send a failure notice instead of a report. You hear about breakage the same way you hear about spend. A notify failure is logged and recorded on the run.</div>
+        </div>
+      </div>
+      <div class="rt-card">
+        <h3>Store: filesystem, no database</h3>
+        <p><span class="mono">run.json</span> is written last as the commit marker; the viewer ignores run directories without one. An in-memory index scans at startup and updates after each run. Retention is keep-everything for now.</p>
+        <pre>{data_dir}/reports/&lt;report-name&gt;/runs/&lt;run-id&gt;/
+    <span class="h">run.json</span>       <span class="c"># status, stage outcomes, timings,</span>
+                   <span class="c"># headline summary &middot; written last</span>
+    artifacts/
+        report.html</pre>
+      </div>
+      <div class="rt-card">
+        <h3>Health and observability</h3>
+        <p><b>Run records are the metrics.</b> No metrics endpoint in the MVP.</p>
+        <div class="health-chips">
+          <span class="hchip">GET /healthz</span>
+          <span class="hchip">Docker HEALTHCHECK</span>
+          <span class="hchip">JSON logs &rarr; stdout</span>
+          <span class="hchip">report + run_id fields</span>
+          <span class="hchip">/wkx/beacon/&lt;env&gt;</span>
+        </div>
+        <p><span class="mono">/healthz</span> checks the scheduler is running and the data dir is writable. Logs carry <span class="mono">report</span> and <span class="mono">run_id</span> at every stage boundary and flow to CloudWatch via the platform agent.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The htmx viewer <span class="sec-note">read-only over the store; it never triggers runs</span></h2>
+    <div class="two-col">
+      <div class="rt-card">
+        <h3>Route map</h3>
+        <table class="routes">
+          <tr><td class="r">GET /</td><td class="p">Index: each report with latest status and headline figures</td></tr>
+          <tr><td class="r">GET /reports/{name}</td><td class="p">Run history; htmx lazy-loads older pages</td></tr>
+          <tr><td class="r">GET /reports/{name}/latest</td><td class="p">Redirect to latest successful run; <b>the stable link emails use</b></td></tr>
+          <tr><td class="r">GET …/runs/{run-id}</td><td class="p">Run permalink: metadata, stage outcomes, artifact</td></tr>
+          <tr><td class="r">GET …/artifacts/{file}</td><td class="p">The raw artifact, served as-is</td></tr>
+          <tr><td class="r">GET /healthz</td><td class="p">Scheduler running + data dir writable</td></tr>
+        </table>
+      </div>
+      <div class="rt-card">
+        <h3>Index at a glance</h3>
+        <div class="mock">
+          <div class="mock-bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">beacon.wingkongexchange.dev</span></div>
+          <div class="mock-row"><span class="nm">platform-cost</span><span class="hl">$23.41 MTD of $50.00 &middot; 07:00 today</span><span class="pill ok">ok</span></div>
+          <div class="mock-row"><span class="nm">platform-errors</span><span class="hl">future report, same seams</span><span class="pill fail">failed</span></div>
+          <div class="mock-note">Server-rendered Jinja2 + htmx fragments. htmx is vendored into the image, no CDN at runtime, no JS build chain.</div>
+        </div>
+        <p><b>Artifacts are self-contained HTML</b> (inline CSS, no external assets), rendered at generation time: identical from the store, in the viewer, or saved to disk years later.</p>
+        <p><b>Public-page hygiene:</b> templates render no account IDs or ARNs, only tag values and dollar figures. Conservative security headers (CSP, no-referrer, nosniff). Authn stays a platform decision.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Wired by config <span class="sec-note">beacon.toml declares reports; plugins validate their own blocks</span></h2>
+    <pre><span class="h">[[report]]</span>
+<span class="k">name</span>       = <span class="s">"platform-cost"</span>
+<span class="k">collector</span>  = <span class="s">"aws-cost"</span>
+<span class="k">renderers</span>  = [<span class="s">"html"</span>]
+<span class="k">notifiers</span>  = [<span class="s">"email-ses"</span>]
+<span class="k">schedule</span>   = <span class="s">"0 7 * * *"</span>   <span class="c"># cron, in the configured timezone</span>
+<span class="k">timezone</span>   = <span class="s">"Pacific/Auckland"</span>
+
+<span class="h">[report.collector_config]</span>      <span class="c"># validated by the aws-cost plugin's model</span>
+<span class="k">budget</span>          = <span class="s">50.0</span>
+<span class="k">budget_currency</span> = <span class="s">"NZD"</span>
+<span class="k">display</span>         = <span class="s">"local-first"</span>  <span class="c"># currency display, default "usd"</span>
+<span class="k">fx_usd_to_local</span> = <span class="s">1.64</span>           <span class="c"># static, shown in report fine print</span>
+<span class="k">day_display</span>     = <span class="s">"local-first"</span>  <span class="c"># date labels, default "utc";</span>
+                                   <span class="c"># data is always UTC billing days</span>
+
+<span class="h">[report.notifier_config.email-ses]</span>
+<span class="k">to</span> = [<span class="s">"you@example.com"</span>]</pre>
+    <div class="callout"><b>Fails at boot, not at 07:00.</b> Unknown plugin names, unknown config keys (<span class="mono">extra="forbid"</span>) and missing entry points are startup errors that list what was found versus what was expected.</div>
+  </section>
+
+  <section>
+    <h2>Repo, tests, CI <span class="sec-note">PROJECT.md conventions: uv &middot; ruff &middot; pytest &middot; ty &middot; src layout &middot; Python 3.14</span></h2>
+    <div class="two-col">
+      <div class="rt-card">
+        <h3>Repo layout</h3>
+        <pre>wkx-beacon/
+├── pyproject.toml     <span class="c"># deps + entry points for built-ins</span>
+├── uv.lock &middot; .python-version &middot; .env.example
+├── <span class="h">beacon.toml</span>        <span class="c"># this deployment's report wiring,</span>
+│                      <span class="c"># baked into the image</span>
+├── Dockerfile         <span class="c"># arm64 first, multi-arch capable</span>
+├── compose.yml &middot; caddy.snippet   <span class="c"># the wkx app contract</span>
+├── .github/workflows/ci.yml &middot; .pre-commit-config.yaml
+├── src/wkx_beacon/
+│   ├── __main__.py    <span class="c"># Typer CLI</span>
+│   ├── _logging.py &middot; exceptions.py &middot; config.py
+│   ├── <span class="h">plugin/</span>        <span class="c"># public API: protocols,</span>
+│   │                  <span class="c"># ReportData, discovery</span>
+│   ├── pipeline.py &middot; scheduler.py &middot; store.py
+│   ├── web/           <span class="c"># FastAPI, templates, vendored htmx</span>
+│   └── plugins/       <span class="c"># aws_cost &middot; html &middot; email_ses</span>
+└── tests/</pre>
+      </div>
+      <div class="rt-card">
+        <h3>CLI</h3>
+        <table class="routes">
+          <tr><td class="r">beacon serve</td><td class="p">Scheduler + viewer; <b>the container entrypoint</b></td></tr>
+          <tr><td class="r">beacon run &lt;report&gt;</td><td class="p">One-shot pipeline run for development and debugging; CLI-only, the viewer stays read-only</td></tr>
+          <tr><td class="r">beacon validate</td><td class="p">Config + plugin discovery check; usable in CI</td></tr>
+        </table>
+        <p>Typer, per the conventions. Logging configured once at the entry point; JSON in the container, dev format locally.</p>
+      </div>
+      <div class="rt-card">
+        <h3>Testing</h3>
+        <p><b>No live AWS anywhere.</b> Cost Explorer and SES run against botocore's <span class="mono">Stubber</span>. The renderer gets golden-file tests from fixture <span class="mono">CostReportData</span>. Pipeline failure paths use deliberately-failing fake plugins registered through <b>real entry points</b>, which also proves the third-party discovery path. Viewer routes and htmx fragments via FastAPI's <span class="mono">TestClient</span> over a fixture store.</p>
+        <p><b>Plugin conformance checks ship as a reusable test kit</b>: the plugin API is the product, so third parties get its tests.</p>
+      </div>
+      <div class="rt-card">
+        <h3>CI and platform prerequisites</h3>
+        <p>CI: ruff check + format check, ty, pytest with coverage, arm64 Docker build. The deploy workflow (GitHub OIDC &rarr; ECR &rarr; SSM send-command) is inherited from the platform reference project when the platform is ready; until then <span class="mono">docker compose up</span> locally, which is also beacon's Docker Compose platform story.</p>
+        <p><b>Terraform work in wkx-platform:</b> SES domain identity + Cloudflare DNS records; IAM permissions for <span class="mono">ce:GetCostAndUsage</span> and <span class="mono">ses:SendEmail</span> (mechanism per the deferred platform decision); SSM params under <span class="mono">/wkx/beacon/&lt;env&gt;/</span>; data dir; log group.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Visual companion for the wkx-beacon brainstorming session. The design spec carries the canonical Mermaid diagrams; deployment-level settings (data dir, base URL, log level) come from environment variables via pydantic-settings, report wiring from beacon.toml.
+  </footer>
+</div>
