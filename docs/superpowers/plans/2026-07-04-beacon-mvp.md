@@ -197,7 +197,7 @@ class NotifyError(BeaconError):
     """Raised when a notifier fails to announce a run."""
 ```
 
-- [ ] **Step 6: Write `src/wkx_beacon/_logging.py`** (copy the PROJECT.md §14d template verbatim; it provides `configure() -> None` reading `LOG_LEVEL` and `LOG_FORMAT` from the environment, JSON to stdout when `LOG_FORMAT=json`)
+- [ ] **Step 6: Write `src/wkx_beacon/_logging.py`** (copy the [`PROJECT.md` §14d](https://github.com/etoews/python-standards/blob/main/PROJECT.md#14d-srcmyproj_loggingpy) template verbatim; it provides `configure() -> None` reading `LOG_LEVEL` and `LOG_FORMAT` from the environment, JSON to stdout when `LOG_FORMAT=json`)
 
 - [ ] **Step 7: Write the failing test** in `tests/test_exceptions.py`
 
@@ -232,7 +232,7 @@ uv run ruff check --fix && uv run ruff format
 uv run ty check                  # expected: clean
 ```
 
-- [ ] **Step 9: Write `.pre-commit-config.yaml`** (copy PROJECT.md §11 verbatim), then `pre-commit install`.
+- [ ] **Step 9: Write `.pre-commit-config.yaml`** (copy [`PROJECT.md` §11](https://github.com/etoews/python-standards/blob/main/PROJECT.md#11-pre-commit-hooks) verbatim), then `pre-commit install`.
 
 - [ ] **Step 10: Commit**
 
@@ -3084,7 +3084,7 @@ beacon.wingkongexchange.dev {
 }
 ```
 
-- [ ] **Step 5: Write `.github/workflows/ci.yml`** (PROJECT.md §14c plus the container build)
+- [ ] **Step 5: Write `.github/workflows/ci.yml`** ([`PROJECT.md` §14c](https://github.com/etoews/python-standards/blob/main/PROJECT.md#14c-githubworkflowsciyml) plus the container build)
 
 ```yaml
 name: CI
