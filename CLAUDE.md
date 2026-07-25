@@ -26,7 +26,7 @@ Start here:
 docstrings, error handling, config and secrets, dependency management, the Typer CLI - follow
 [`docs/standards/python.md`](docs/standards/python.md).** That is the repo's distilled Python
 standard and the routing target: read it before writing or reviewing Python here. It is distilled
-from the canonical source at [github.com/etoews/python](https://github.com/etoews/python); reference
+from the canonical source at [github.com/etoews/python-standards](https://github.com/etoews/python-standards); reference
 that URL, not a local path, for the original.
 
 The two rules worth stating up front (the standard has the rest):

@@ -1,9 +1,9 @@
 # Python standards
 
 The Python development standard for wkx-beacon. Distilled from the canonical, machine-wide
-conventions at [github.com/etoews/python](https://github.com/etoews/python)
-([`PROJECT.md`](https://github.com/etoews/python/blob/main/PROJECT.md) is the per-project layer;
-[`MAC.md`](https://github.com/etoews/python/blob/main/MAC.md) is the one-time machine setup). This
+conventions at [github.com/etoews/python-standards](https://github.com/etoews/python-standards)
+([`PROJECT.md`](https://github.com/etoews/python-standards/blob/main/PROJECT.md) is the per-project layer;
+[`MAC.md`](https://github.com/etoews/python-standards/blob/main/MAC.md) is the one-time machine setup). This
 file keeps only what is relevant to this repo, with beacon's own names in the examples. When it and
 the canonical source disagree, the canonical source wins; open an issue rather than diverging
 silently.
@@ -185,11 +185,11 @@ One project at a time, one commit. Pin with `uv python pin 3.X`; set `requires-p
 ruff `target-version = "py3X"`; `rm -rf .venv && uv sync`; modernise syntax with
 `uv run ruff check --select UP --fix`; run the full commit gate; commit as `python: upgrade to 3.X`
 in isolation. Full steps in the canonical
-[`PROJECT.md` §13](https://github.com/etoews/python/blob/main/PROJECT.md).
+[`PROJECT.md` §13](https://github.com/etoews/python-standards/blob/main/PROJECT.md).
 
 ## Reference
 
 Full templates (`pyproject.toml`, CI workflow, `_logging.py`, Typer entry point, pre-commit config)
 and the complete command reference live in the canonical source at
-[github.com/etoews/python](https://github.com/etoews/python). This repo already embodies them; use
+[github.com/etoews/python-standards](https://github.com/etoews/python-standards). This repo already embodies them; use
 them when adding a new module or plugin, and match the surrounding code.
