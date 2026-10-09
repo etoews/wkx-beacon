@@ -1,6 +1,6 @@
 # wkx-beacon
 
-Beacon generates reports about the platform it runs on and announces them. This glossary is the canonical ubiquitous language for beacon. Beacon is its own bounded context: where a term here differs from the WKX Platform glossary (`wkx-platform/CONTEXT.md`), beacon's meaning applies inside this repo, and the substrate is always named "WKX Platform" in full.
+Beacon generates reports about the platform it runs on and announces them. This glossary is the canonical ubiquitous language for beacon. Beacon is its own bounded context: where a term here differs from the WKX Platform glossary (`wkx-platform/GLOSSARY.md`), beacon's meaning applies inside this repo, and the substrate is always named "WKX Platform" in full.
 
 ## Language
 

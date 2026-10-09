@@ -13,7 +13,7 @@ from wkx_beacon.plugin import Artefact, RunStatus
 logger = logging.getLogger(__name__)
 
 RECORD_FILE = "run.json"
-ARTEFACTS_DIR = "artifacts"  # spelled this way in code paths and URLs; see CONTEXT.md
+ARTEFACTS_DIR = "artifacts"  # spelled this way in code paths and URLs; see GLOSSARY.md
 
 
 def new_run_id(now: datetime) -> str:

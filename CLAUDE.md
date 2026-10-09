@@ -14,7 +14,7 @@ Start here:
 
 - [`README.md`](README.md) - what beacon is, the MVP slice, quickstart, configuration, plugin
   authoring, deployment.
-- [`CONTEXT.md`](CONTEXT.md) - the canonical ubiquitous language. Use these terms exactly.
+- [`GLOSSARY.md`](GLOSSARY.md) - the canonical ubiquitous language. Use these terms exactly.
 - [`ROADMAP.md`](ROADMAP.md) - build order, deliverables, and status.
 - [`docs/superpowers/specs/2026-07-04-wkx-beacon-design.md`](docs/superpowers/specs/2026-07-04-wkx-beacon-design.md)
   - the full architecture and design rationale.
@@ -37,7 +37,7 @@ The two rules worth stating up front (the standard has the rest):
 
 ## Domain and code invariants
 
-- **The ubiquitous language in `CONTEXT.md` is canonical.** Use its terms exactly. In particular,
+- **The ubiquitous language in `GLOSSARY.md` is canonical.** Use its terms exactly. In particular,
   the concept is spelled "artefact" in prose but `artifacts/` in code paths and URLs.
 - **ADR-0002**: no authentication or authorisation anywhere in beacon; that belongs to the host
   platform. Do not add login screens, sessions, or API keys.

@@ -48,7 +48,7 @@ flowchart TB
 ```
 
 See the [design spec](docs/superpowers/specs/2026-07-04-wkx-beacon-design.md) for the full
-architecture, including the per-run sequence diagram, and [`CONTEXT.md`](CONTEXT.md) for the
+architecture, including the per-run sequence diagram, and [`GLOSSARY.md`](GLOSSARY.md) for the
 canonical glossary of terms such as report, run, published, and store.
 
 ## Quickstart
@@ -219,7 +219,7 @@ WKX Platform makes its own authn decision.
 
 - [Design spec](docs/superpowers/specs/2026-07-04-wkx-beacon-design.md): the full architecture,
   plugin contracts, runtime behaviour, and testing approach.
-- [`CONTEXT.md`](CONTEXT.md): the canonical ubiquitous language for beacon.
+- [`GLOSSARY.md`](GLOSSARY.md): the canonical ubiquitous language for beacon.
 - [ADR-0001](docs/adr/0001-plugin-framework-via-entry-points.md): plugin framework via entry
   points from day one.
 - [ADR-0002](docs/adr/0002-authn-belongs-to-the-host-platform.md): authn and authz belong to the

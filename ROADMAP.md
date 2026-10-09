@@ -4,7 +4,7 @@ Build order, deliverables, and a hands-on artefact at every milestone.
 
 For the full design rationale, see
 [docs/superpowers/specs/2026-07-04-wkx-beacon-design.md](docs/superpowers/specs/2026-07-04-wkx-beacon-design.md).
-For the canonical terms (report, run, artefact, published, store), see [CONTEXT.md](CONTEXT.md).
+For the canonical terms (report, run, artefact, published, store), see [GLOSSARY.md](GLOSSARY.md).
 
 Beacon's value is the matrix of **report types** (cost, test, ai-eval, usage, error), **formats**
 (html, json, markdown, ...), and **channels** (email, ms-teams, discord, ...) it can grow into. M0

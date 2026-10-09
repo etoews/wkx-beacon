@@ -4,7 +4,7 @@
 
 **Goal:** Build the wkx-beacon MVP: a containerised plugin-framework report generator whose first vertical slice is a daily AWS cost report rendered to a self-contained HTML artefact, served by a read-only htmx viewer, and announced by email via Amazon SES.
 
-**Architecture:** One container, one process. A scheduler fires report pipelines (collect, render, store, notify); plugins discovered through entry points do the platform-, format-, and channel-specific work; a FastAPI + Jinja2 + htmx viewer serves the filesystem store read-only. See `docs/superpowers/specs/2026-07-04-wkx-beacon-design.md`, `CONTEXT.md` (canonical terms), and `docs/adr/0001..0003`.
+**Architecture:** One container, one process. A scheduler fires report pipelines (collect, render, store, notify); plugins discovered through entry points do the platform-, format-, and channel-specific work; a FastAPI + Jinja2 + htmx viewer serves the filesystem store read-only. See `docs/superpowers/specs/2026-07-04-wkx-beacon-design.md`, `GLOSSARY.md` (canonical terms), and `docs/adr/0001..0003`.
 
 **Tech Stack:** Python 3.14, uv, FastAPI, uvicorn, Jinja2, APScheduler 3.x, croniter, boto3, pydantic + pydantic-settings, Typer, htmx (vendored), pytest + botocore Stubber, ruff, ty.
 
@@ -15,7 +15,7 @@
 - `ruff check`, `ruff format --check`, `ty check`, and `pytest` must pass at the end of every task (each task's final verify step runs all four).
 - stdlib `logging` with module loggers (`logger = logging.getLogger(__name__)`); `%` formatting; never `print()` in library code; never log secrets or report contents.
 - Exceptions: raise `BeaconError` subclasses; translate third-party exceptions at the boundary with `raise X(...) from e`.
-- Canonical terms from `CONTEXT.md`: Platform, report type, report, report name, run, published, run status (`ok` / `degraded` / `failed`), artefact (spelled `artifacts/` in code paths and URLs), collector, renderer, notifier, template pack, store, run record, billing day.
+- Canonical terms from `GLOSSARY.md`: Platform, report type, report, report name, run, published, run status (`ok` / `degraded` / `failed`), artefact (spelled `artifacts/` in code paths and URLs), collector, renderer, notifier, template pack, store, run record, billing day.
 - ADR-0002: no authentication anywhere in beacon. ADR-0003: no database; the filesystem store is the only state.
 - Money is `Decimal`, never `float`. Billing data is always UTC days and UTC months.
 - Prose (docstrings, README, docs) in New Zealand English, no em dashes. Diagrams in Mermaid.
@@ -982,7 +982,7 @@ from wkx_beacon.plugin import Artefact, RunStatus
 logger = logging.getLogger(__name__)
 
 RECORD_FILE = "run.json"
-ARTEFACTS_DIR = "artifacts"  # spelled this way in code paths and URLs; see CONTEXT.md
+ARTEFACTS_DIR = "artifacts"  # spelled this way in code paths and URLs; see GLOSSARY.md
 
 
 def new_run_id(now: datetime) -> str:
@@ -1097,7 +1097,7 @@ git commit -m "feat: filesystem store with run.json commit marker"
 - Consumes: `ResolvedReport` (Task 3), `Store`, `RunRecord`, `StageOutcome`, `new_run_id` (Task 4), `RunSummary` (Task 2), exceptions.
 - Produces: `def execute(report: ResolvedReport, store: Store, base_url: str, now_fn: Callable[[], datetime] | None = None) -> RunRecord`.
 
-Status rules (from the spec and CONTEXT.md):
+Status rules (from the spec and GLOSSARY.md):
 - collect raises, or every renderer raises, or artefact write raises: status `failed`, nothing published; the run record is still written.
 - some renderers fail but at least one artefact is stored: `degraded`.
 - any notifier fails: `degraded` at best (a notify failure never unpublishes).
@@ -3140,7 +3140,7 @@ jobs:
           push: false
 ```
 
-- [ ] **Step 6: Write `README.md`** covering, in NZ English with no em dashes: what beacon is (one paragraph, the CONTEXT.md framing); the MVP slice; quickstart (`uv sync`, `cp .env.example .env`, `uv run beacon validate`, `uv run beacon run platform-cost` needs AWS credentials, `uv run beacon serve`); configuration (env vars table and `beacon.toml` with the display/day_display options); plugin authoring (the three entry-point groups, `cls(config)` convention, conformance kit import path); deployment notes (WKX Platform prerequisites from spec §12); links to the spec, `CONTEXT.md`, and the ADRs. Include the container Mermaid diagram from spec §4.
+- [ ] **Step 6: Write `README.md`** covering, in NZ English with no em dashes: what beacon is (one paragraph, the GLOSSARY.md framing); the MVP slice; quickstart (`uv sync`, `cp .env.example .env`, `uv run beacon validate`, `uv run beacon run platform-cost` needs AWS credentials, `uv run beacon serve`); configuration (env vars table and `beacon.toml` with the display/day_display options); plugin authoring (the three entry-point groups, `cls(config)` convention, conformance kit import path); deployment notes (WKX Platform prerequisites from spec §12); links to the spec, `GLOSSARY.md`, and the ADRs. Include the container Mermaid diagram from spec §4.
 
 - [ ] **Step 7: Verify the container locally** (requires Docker; skip on CI-only environments)
 
